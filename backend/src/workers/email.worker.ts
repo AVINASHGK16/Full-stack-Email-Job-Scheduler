@@ -3,6 +3,7 @@ import { prisma } from '../db';
 import { redisConnection } from '../config/redis';
 import { env } from '../config/env';
 import { EmailService } from '../services/email.service';
+import { RateLimitService } from '../services/rateLimit.service';
 
 export const emailWorker = new Worker(
   'email-scheduler',
@@ -36,7 +37,18 @@ export const emailWorker = new Worker(
     const campaign = recipient.campaign;
     const sender = campaign.sender;
 
-    // 3. Update Campaign status to SENDING if it is PENDING
+    // 3. Hourly rate-limit check (sender-scoped, shared Redis counter)
+    // Must happen AFTER SENT check so already-sent recipients don't consume a slot.
+    const allowed = await RateLimitService.checkAndIncrement(sender.id, campaign.hourlyLimit);
+    if (!allowed) {
+      console.warn(
+        `🚫 Rate limit reached for sender ${sender.id} (hourlyLimit=${campaign.hourlyLimit}). ` +
+        `Job ${job.id} denied. Recipient ${recipient.email} stays QUEUED. (Phase 7.4 will reschedule.)`
+      );
+      return { skipped: true, reason: 'rate_limited' };
+    }
+
+    // 4. Update Campaign status to SENDING if it is PENDING
     if (campaign.status === 'PENDING') {
       await prisma.campaign.update({
         where: { id: campaign.id },

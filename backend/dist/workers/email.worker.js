@@ -6,6 +6,7 @@ const db_1 = require("../db");
 const redis_1 = require("../config/redis");
 const env_1 = require("../config/env");
 const email_service_1 = require("../services/email.service");
+const rateLimit_service_1 = require("../services/rateLimit.service");
 exports.emailWorker = new bullmq_1.Worker('email-scheduler', async (job) => {
     const { recipientId } = job.data;
     console.log(`[${new Date().toISOString()}] 👷 Worker picked up job ${job.id} for Recipient ID: ${recipientId}`);
@@ -31,7 +32,15 @@ exports.emailWorker = new bullmq_1.Worker('email-scheduler', async (job) => {
     }
     const campaign = recipient.campaign;
     const sender = campaign.sender;
-    // 3. Update Campaign status to SENDING if it is PENDING
+    // 3. Hourly rate-limit check (sender-scoped, shared Redis counter)
+    // Must happen AFTER SENT check so already-sent recipients don't consume a slot.
+    const allowed = await rateLimit_service_1.RateLimitService.checkAndIncrement(sender.id, campaign.hourlyLimit);
+    if (!allowed) {
+        console.warn(`🚫 Rate limit reached for sender ${sender.id} (hourlyLimit=${campaign.hourlyLimit}). ` +
+            `Job ${job.id} denied. Recipient ${recipient.email} stays QUEUED. (Phase 7.4 will reschedule.)`);
+        return { skipped: true, reason: 'rate_limited' };
+    }
+    // 4. Update Campaign status to SENDING if it is PENDING
     if (campaign.status === 'PENDING') {
         await db_1.prisma.campaign.update({
             where: { id: campaign.id },

@@ -9,7 +9,7 @@ export const createCampaignSchema = z.object({
     message: 'startTime must be a valid date timestamp',
   }),
   delaySeconds: z.coerce.number().int().nonnegative('delaySeconds must be a non-negative integer'),
-  hourlyLimit: z.coerce.number().int().positive('hourlyLimit must be a positive integer'),
+  hourlyLimit: z.coerce.number().int().nonnegative('hourlyLimit must be a non-negative integer'),
   recipients: z
     .array(z.string().email('Invalid email address format'))
     .nonempty('recipients list cannot be empty'),
