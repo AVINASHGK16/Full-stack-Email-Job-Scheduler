@@ -8,7 +8,7 @@ export const emailWorker = new Worker(
   'email-scheduler',
   async (job: Job) => {
     const { recipientId } = job.data;
-    console.log(`👷 Worker picked up job ${job.id} for Recipient ID: ${recipientId}`);
+    console.log(`[${new Date().toISOString()}] 👷 Worker picked up job ${job.id} for Recipient ID: ${recipientId}`);
 
     // 1. Fetch Recipient with Campaign and Sender info
     const recipient = await prisma.recipient.findUnique({
@@ -141,7 +141,7 @@ export const emailWorker = new Worker(
 );
 
 emailWorker.on('completed', (job) => {
-  console.log(`🎉 Job ${job.id} completed successfully`);
+  console.log(`[${new Date().toISOString()}] 🎉 Job ${job.id} completed successfully`);
 });
 
 emailWorker.on('failed', (job, err) => {

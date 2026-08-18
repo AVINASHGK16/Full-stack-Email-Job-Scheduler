@@ -8,7 +8,7 @@ const env_1 = require("../config/env");
 const email_service_1 = require("../services/email.service");
 exports.emailWorker = new bullmq_1.Worker('email-scheduler', async (job) => {
     const { recipientId } = job.data;
-    console.log(`👷 Worker picked up job ${job.id} for Recipient ID: ${recipientId}`);
+    console.log(`[${new Date().toISOString()}] 👷 Worker picked up job ${job.id} for Recipient ID: ${recipientId}`);
     // 1. Fetch Recipient with Campaign and Sender info
     const recipient = await db_1.prisma.recipient.findUnique({
         where: { id: recipientId },
@@ -126,7 +126,7 @@ exports.emailWorker = new bullmq_1.Worker('email-scheduler', async (job) => {
     concurrency: env_1.env.WORKER_CONCURRENCY,
 });
 exports.emailWorker.on('completed', (job) => {
-    console.log(`🎉 Job ${job.id} completed successfully`);
+    console.log(`[${new Date().toISOString()}] 🎉 Job ${job.id} completed successfully`);
 });
 exports.emailWorker.on('failed', (job, err) => {
     console.error(`❌ Job ${job?.id} failed with error:`, err);
