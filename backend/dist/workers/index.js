@@ -1,11 +1,6 @@
 "use strict";
-/**
- * Workers Module Placeholder
- *
- * This module will initialize BullMQ Worker instances that pull scheduled
- * email jobs from Redis, execute business logic (checking database status,
- * enforcing rate limits, sending emails), and updating results.
- */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.workersPlaceholder = void 0;
-exports.workersPlaceholder = true;
+const env_1 = require("../config/env");
+require("./test.worker");
+console.log(`🚀 Worker process started in ${env_1.env.NODE_ENV} mode`);
+console.log(`⚙️ Concurrency: ${env_1.env.WORKER_CONCURRENCY}`);

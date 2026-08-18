@@ -1,9 +1,5 @@
-/**
- * Workers Module Placeholder
- * 
- * This module will initialize BullMQ Worker instances that pull scheduled
- * email jobs from Redis, execute business logic (checking database status,
- * enforcing rate limits, sending emails), and updating results.
- */
+import { env } from '../config/env';
+import './test.worker';
 
-export const workersPlaceholder = true;
+console.log(`🚀 Worker process started in ${env.NODE_ENV} mode`);
+console.log(`⚙️ Concurrency: ${env.WORKER_CONCURRENCY}`);

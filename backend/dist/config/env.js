@@ -23,6 +23,7 @@ const envSchema = zod_1.z.object({
     REDIS_HOST: zod_1.z.string().default('localhost'),
     REDIS_PORT: zod_1.z.coerce.number().default(6379),
     REDIS_URL: zod_1.z.string().min(1),
+    WORKER_CONCURRENCY: zod_1.z.coerce.number().int().positive().default(1),
     // Authentication placeholders
     JWT_SECRET: zod_1.z.string().min(1),
     GOOGLE_CLIENT_ID: zod_1.z.string().min(1),
