@@ -24,17 +24,17 @@
 }
 
 .sidebar-logo-icon {
-  width: 28px;
-  height: 28px;
-  color: #1a1a1a;
+  width: 24px;
+  height: 24px;
+  color: #111827;
   flex-shrink: 0;
 }
 
 .sidebar-logo-text {
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1.35rem;
+  font-weight: 800;
   color: #111827;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
 
 /* ── Profile card ─────────────────────────────────────────── */
@@ -42,21 +42,23 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 9px 12px;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
+  background-color: #ffffff;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .sidebar-profile:hover {
   background-color: #f9fafb;
+  border-color: #d1d5db;
 }
 
 .sidebar-avatar {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background-color: #2d6a2d;
   color: #ffffff;
@@ -81,6 +83,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.25;
 }
 
 .sidebar-profile-email {
@@ -89,6 +92,8 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.25;
+  margin-top: 2px;
 }
 
 .sidebar-profile-chevron {
@@ -96,68 +101,72 @@
   flex-shrink: 0;
 }
 
-/* ── Compose button ───────────────────────────────────────── */
+/* ── Compose button (White background + Green outline + Green text) ── */
 .sidebar-compose-btn {
   display: block;
   width: 100%;
-  padding: 11px 16px;
-  background-color: #2d6a2d;
-  border: none;
+  padding: 10px 16px;
+  background-color: #ffffff;
+  border: 1.5px solid #2d6a2d;
   border-radius: 8px;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #ffffff;
+  color: #2d6a2d;
   cursor: pointer;
   text-align: center;
   text-decoration: none;
   margin-bottom: 24px;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   box-sizing: border-box;
 }
 
 .sidebar-compose-btn:hover {
-  background-color: #245924;
+  background-color: #f0fdf4;
+  border-color: #245924;
+  color: #245924;
 }
 
 /* ── Section label ────────────────────────────────────────── */
 .sidebar-section-label {
   font-size: 0.6875rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #9ca3af;
-  padding: 0 4px;
-  margin-bottom: 6px;
+  padding: 0 6px;
+  margin-bottom: 8px;
 }
 
 /* ── Navigation items ─────────────────────────────────────── */
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .sidebar-nav-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 10px;
+  gap: 12px;
+  padding: 9px 12px;
   border-radius: 8px;
   text-decoration: none;
   color: #374151;
   font-size: 0.9rem;
   font-weight: 500;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
   cursor: pointer;
 }
 
 .sidebar-nav-item:hover {
   background-color: #f3f4f6;
+  color: #111827;
 }
 
 .sidebar-nav-item.active {
   background-color: #f0fdf4;
   color: #166534;
+  font-weight: 600;
 }
 
 .sidebar-nav-item.active .sidebar-nav-icon {
@@ -179,16 +188,13 @@
   font-size: 0.8125rem;
   font-weight: 500;
   color: #6b7280;
-  background-color: #f3f4f6;
-  border-radius: 20px;
-  padding: 1px 8px;
-  min-width: 28px;
-  text-align: center;
+  padding: 0 4px;
+  text-align: right;
 }
 
 .sidebar-nav-item.active .sidebar-nav-count {
-  background-color: #dcfce7;
   color: #166534;
+  font-weight: 600;
 }
 
 /* ── Responsive ───────────────────────────────────────────── */

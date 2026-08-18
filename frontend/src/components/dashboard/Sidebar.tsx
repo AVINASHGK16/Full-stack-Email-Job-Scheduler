@@ -8,7 +8,7 @@ interface SidebarProps {
 /**
  * Sidebar — left navigation panel.
  *
- * Static placeholder data for Phase 9.3.
+ * Static placeholder data for Phase 9.4.
  * Real user info and dynamic counts are wired in a later phase.
  */
 export default function Sidebar({ activeNav }: SidebarProps) {
@@ -16,10 +16,10 @@ export default function Sidebar({ activeNav }: SidebarProps) {
     <aside className="sidebar">
 
       {/* ── Logo ── */}
-      <span className="sidebar-logo">
-        <EnvelopeIcon className="sidebar-logo-icon" />
+      <div className="sidebar-logo">
         <span className="sidebar-logo-text">ONB</span>
-      </span>
+        <EnvelopeIcon className="sidebar-logo-icon" />
+      </div>
 
       {/* ── Profile card — static placeholder ── */}
       <div className="sidebar-profile">
@@ -31,13 +31,13 @@ export default function Sidebar({ activeNav }: SidebarProps) {
         <ChevronDownIcon className="sidebar-profile-chevron" />
       </div>
 
-      {/* ── Compose button ── */}
+      {/* ── Compose button (White background + green outline) ── */}
       <Link to="/compose" className="sidebar-compose-btn">
         Compose
       </Link>
 
       {/* ── Navigation ── */}
-      <div className="sidebar-section-label">Core</div>
+      <div className="sidebar-section-label">CORE</div>
       <nav className="sidebar-nav" aria-label="Main navigation">
 
         <Link

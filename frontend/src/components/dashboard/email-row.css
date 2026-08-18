@@ -1,103 +1,94 @@
-/* EmailRow — styles for email list container and individual rows */
+/* EmailRow — styles for lightweight email rows and list */
 
-.email-list-container {
+.email-list {
+  display: flex;
+  flex-direction: column;
   background-color: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  overflow: hidden;
 }
 
 .email-row {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 16px 20px;
-  border-bottom: 1px solid #f3f4f6;
+  padding: 16px 28px;
+  border-bottom: 1px solid #f0f2f5;
+  background-color: #ffffff;
   transition: background-color 0.15s ease;
   cursor: pointer;
-}
-
-.email-row:last-child {
-  border-bottom: none;
 }
 
 .email-row:hover {
   background-color: #f9fafb;
 }
 
-/* ── Avatar ───────────────────────────────────────────────── */
-.email-row-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #e0f2fe;
-  color: #0369a1;
-  font-size: 0.875rem;
-  font-weight: 600;
+/* ── Recipient & Badge section ────────────────────────────── */
+.email-row-main-info {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-/* ── Main content ─────────────────────────────────────────── */
-.email-row-content {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: baseline;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-shrink: 0;
+  min-width: 210px;
 }
 
 .email-row-recipient {
   font-size: 0.9375rem;
-  font-weight: 600;
+  font-weight: 700;
   color: #111827;
   white-space: nowrap;
 }
 
-/* ── Status badge ─────────────────────────────────────────── */
 .email-row-badge {
   font-size: 0.75rem;
   font-weight: 600;
-  padding: 2px 10px;
+  padding: 2px 8px;
   border-radius: 12px;
-  border: 1px solid transparent;
   white-space: nowrap;
 }
 
 .email-row-badge.scheduled {
-  background-color: #f0fdf4;
+  background-color: #eaf8ef;
   color: #166534;
-  border-color: #bbf7d0;
+  border: 1px solid #bbf7d0;
 }
 
 .email-row-badge.sent {
-  background-color: #f8fafc;
+  background-color: #f1f5f9;
   color: #475569;
-  border-color: #e2e8f0;
+  border: 1px solid #e2e8f0;
 }
 
-/* ── Subject & snippet ────────────────────────────────────── */
-.email-row-subject {
-  font-size: 0.9375rem;
-  font-weight: 500;
-  color: #1f2937;
+/* ── Subject & Preview snippet ────────────────────────────── */
+.email-row-message {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
   white-space: nowrap;
+  font-size: 0.9375rem;
+}
+
+.email-row-subject {
+  font-weight: 600;
+  color: #111827;
+  flex-shrink: 0;
+}
+
+.email-row-separator {
+  color: #9ca3af;
+  flex-shrink: 0;
 }
 
 .email-row-preview {
-  font-size: 0.875rem;
   color: #6b7280;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
   flex: 1;
-  min-width: 150px;
 }
 
-/* ── Star / Action ────────────────────────────────────────── */
+/* ── Star Action ──────────────────────────────────────────── */
 .email-row-star {
   color: #9ca3af;
   background: none;
@@ -110,6 +101,7 @@
   border-radius: 4px;
   transition: color 0.15s ease;
   flex-shrink: 0;
+  margin-left: 8px;
 }
 
 .email-row-star:hover {
@@ -117,19 +109,21 @@
 }
 
 /* ── Responsive ───────────────────────────────────────────── */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .email-row {
-    padding: 12px 14px;
+    padding: 14px 16px;
     gap: 12px;
   }
 
-  .email-row-avatar {
-    width: 34px;
-    height: 34px;
-    font-size: 0.75rem;
+  .email-row-main-info {
+    min-width: 170px;
   }
 
   .email-row-preview {
+    display: none;
+  }
+
+  .email-row-separator {
     display: none;
   }
 }
