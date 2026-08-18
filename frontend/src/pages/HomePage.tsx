@@ -1,11 +1,10 @@
-// Placeholder page — Home (/)
-// Phase 9.2+ will replace this with the real Dashboard.
+import { Navigate } from 'react-router-dom';
 
+/**
+ * HomePage — /
+ *
+ * Redirects to the default dashboard view (/scheduled).
+ */
 export default function HomePage() {
-  return (
-    <main>
-      <p>Route: /</p>
-      <p>Placeholder — Dashboard will be implemented in a later phase.</p>
-    </main>
-  );
+  return <Navigate to="/scheduled" replace />;
 }

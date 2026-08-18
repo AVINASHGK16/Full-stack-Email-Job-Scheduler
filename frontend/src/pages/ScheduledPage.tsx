@@ -1,11 +1,31 @@
-// Placeholder page — Scheduled (/scheduled)
-// A later phase will replace this with the real Scheduled campaigns UI.
+import DashboardLayout from '../layouts/DashboardLayout';
+import EmailRow from '../components/dashboard/EmailRow';
 
+/**
+ * ScheduledPage — /scheduled
+ *
+ * Displays the Scheduled emails list inside the Dashboard shell.
+ * Uses static representative placeholder data for Phase 9.3.
+ */
 export default function ScheduledPage() {
   return (
-    <main>
-      <p>Route: /scheduled</p>
-      <p>Placeholder — Scheduled campaigns UI will be implemented in a later phase.</p>
-    </main>
+    <DashboardLayout activeNav="scheduled">
+      <div className="email-list-container">
+        <EmailRow
+          recipient="John Smith"
+          status="Scheduled"
+          subject="Meeting follow-up"
+          preview="Just following up on our meeting yesterday..."
+          avatarInitials="JS"
+        />
+        <EmailRow
+          recipient="Olive"
+          status="Scheduled"
+          subject="Great to meet you"
+          preview="Thanks for taking the time to connect..."
+          avatarInitials="OL"
+        />
+      </div>
+    </DashboardLayout>
   );
 }
