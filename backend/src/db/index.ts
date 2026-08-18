@@ -1,12 +1,17 @@
-/**
- * Database Module Placeholder
- * 
- * In subsequent phases, this module will initialize the PrismaClient
- * and manage connection pooling and lifecycle events.
- */
+import { PrismaClient } from '@prisma/client';
 
-// Example placeholder:
-// import { PrismaClient } from '@prisma/client';
-// export const prisma = new PrismaClient();
+declare global {
+  // Prevent connection pool exhaustion during hot-reloads in development
+  // eslint-disable-next-line no-var
+  var prisma: PrismaClient | undefined;
+}
 
-export const dbPlaceholder = true;
+export const prisma =
+  globalThis.prisma ||
+  new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+  });
+
+if (process.env.NODE_ENV !== 'production') {
+  globalThis.prisma = prisma;
+}

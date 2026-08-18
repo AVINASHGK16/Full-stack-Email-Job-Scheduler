@@ -1,13 +1,11 @@
 "use strict";
-/**
- * Database Module Placeholder
- *
- * In subsequent phases, this module will initialize the PrismaClient
- * and manage connection pooling and lifecycle events.
- */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.dbPlaceholder = void 0;
-// Example placeholder:
-// import { PrismaClient } from '@prisma/client';
-// export const prisma = new PrismaClient();
-exports.dbPlaceholder = true;
+exports.prisma = void 0;
+const client_1 = require("@prisma/client");
+exports.prisma = globalThis.prisma ||
+    new client_1.PrismaClient({
+        log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+    });
+if (process.env.NODE_ENV !== 'production') {
+    globalThis.prisma = exports.prisma;
+}

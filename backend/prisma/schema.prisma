@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(uuid())
+  googleId  String?    @unique
+  name      String?
+  email     String     @unique
+  avatarUrl String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  senders   Sender[]
+  campaigns Campaign[]
+
+  @@map("users")
+}
+
+model Sender {
+  id           String     @id @default(uuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email        String
+  smtpUser     String
+  smtpPassword String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  campaigns    Campaign[]
+
+  @@index([userId])
+  @@map("senders")
+}
+
+model Campaign {
+  id           String         @id @default(uuid())
+  userId       String
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  senderId     String
+  sender       Sender         @relation(fields: [senderId], references: [id], onDelete: Restrict)
+  subject      String
+  body         String
+  startTime    DateTime
+  delaySeconds Int            @default(0)
+  hourlyLimit  Int
+  status       CampaignStatus @default(PENDING)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  recipients   Recipient[]
+
+  @@index([userId])
+  @@index([senderId])
+  @@index([status])
+  @@map("campaigns")
+}
+
+model Recipient {
+  id          String          @id @default(uuid())
+  campaignId  String
+  campaign    Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  email       String
+  status      RecipientStatus @default(PENDING)
+  scheduledAt DateTime
+  sentAt      DateTime?
+  failedAt    DateTime?
+  error       String?
+  jobId       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([campaignId, email])
+  @@index([campaignId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("recipients")
+}
+
+enum CampaignStatus {
+  PENDING
+  SENDING
+  COMPLETED
+  PAUSED
+}
+
+enum RecipientStatus {
+  PENDING
+  QUEUED
+  SENT
+  FAILED
+}
