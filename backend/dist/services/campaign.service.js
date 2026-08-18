@@ -9,7 +9,7 @@ class CampaignService {
      * Validates details, saves Campaign and Recipients to DB, and schedules BullMQ jobs.
      */
     static async createCampaign(input) {
-        const { userId, senderId, subject, body, startTime, delaySeconds, hourlyLimit, recipients, } = input;
+        const { userId, senderId, subject, body, startTime, delaySeconds, hourlyLimit, recipients, forceFailAttempts, } = input;
         // 1. Verify User exists
         const user = await db_1.prisma.user.findUnique({
             where: { id: userId },
@@ -78,9 +78,10 @@ class CampaignService {
                 // Add job to BullMQ queue
                 const job = await email_queue_1.emailQueue.add('send-email', {
                     recipientId: recipient.id,
+                    forceFailAttempts,
                 }, {
                     delay: delayMs,
-                    jobId: deterministicJobId, // Deterministic jobId: email:<recipientId>
+                    jobId: deterministicJobId,
                 });
                 // Update recipient state to QUEUED only after queue.add() succeeds
                 const updatedRecipient = await db_1.prisma.recipient.update({

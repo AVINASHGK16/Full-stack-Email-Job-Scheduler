@@ -40,6 +40,12 @@ exports.emailWorker = new bullmq_1.Worker('email-scheduler', async (job) => {
         console.log(`📈 Campaign ${campaign.id} status updated to SENDING`);
     }
     try {
+        // Simulation hook for controlled testing
+        const { forceFailAttempts } = job.data;
+        if (forceFailAttempts && job.attemptsMade < forceFailAttempts) {
+            console.log(`🧪 [TEST MODE] Simulating intentional worker failure (attempt ${job.attemptsMade + 1}/${forceFailAttempts})`);
+            throw new Error(`Controlled simulation failure (attempt ${job.attemptsMade + 1})`);
+        }
         console.log(`✉️ Sending email to ${recipient.email} via Ethereal SMTP...`);
         // 4. Call Nodemailer EmailService
         const result = await email_service_1.EmailService.sendEmail({
@@ -69,16 +75,31 @@ exports.emailWorker = new bullmq_1.Worker('email-scheduler', async (job) => {
     }
     catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err);
-        console.error(`❌ SMTP Send Failed for ${recipient.email}:`, errorMessage);
-        // 6. Update Recipient to FAILED
-        await db_1.prisma.recipient.update({
-            where: { id: recipient.id },
-            data: {
-                status: 'FAILED',
-                failedAt: new Date(),
-                error: errorMessage,
-            },
-        });
+        console.error(`❌ SMTP Send Failed for ${recipient.email} (Attempt ${job.attemptsMade + 1}):`, errorMessage);
+        const maxAttempts = job.opts.attempts || env_1.env.EMAIL_JOB_ATTEMPTS;
+        const isFinalAttempt = job.attemptsMade + 1 >= maxAttempts;
+        if (isFinalAttempt) {
+            console.error(`❌ Final attempt (${job.attemptsMade + 1}/${maxAttempts}) failed for ${recipient.email}. Marking as FAILED.`);
+            // 6. Update Recipient to FAILED only on final attempt
+            await db_1.prisma.recipient.update({
+                where: { id: recipient.id },
+                data: {
+                    status: 'FAILED',
+                    failedAt: new Date(),
+                    error: `Final attempt failed: ${errorMessage}`,
+                },
+            });
+        }
+        else {
+            console.warn(`⚠️ Intermediate attempt (${job.attemptsMade + 1}/${maxAttempts}) failed for ${recipient.email}. Job will retry. Keep status QUEUED.`);
+            // Update error log but preserve QUEUED status in DB
+            await db_1.prisma.recipient.update({
+                where: { id: recipient.id },
+                data: {
+                    error: `Attempt ${job.attemptsMade + 1} failed: ${errorMessage}`,
+                },
+            });
+        }
         // Throw error to trigger BullMQ retry mechanics
         throw err;
     }

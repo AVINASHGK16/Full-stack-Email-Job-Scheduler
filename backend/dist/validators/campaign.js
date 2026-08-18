@@ -15,4 +15,5 @@ exports.createCampaignSchema = zod_1.z.object({
     recipients: zod_1.z
         .array(zod_1.z.string().email('Invalid email address format'))
         .nonempty('recipients list cannot be empty'),
+    forceFailAttempts: zod_1.z.coerce.number().int().nonnegative().optional(),
 });

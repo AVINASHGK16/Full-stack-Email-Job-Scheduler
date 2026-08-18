@@ -23,6 +23,7 @@ const envSchema = z.object({
   REDIS_URL: z.string().min(1),
   WORKER_CONCURRENCY: z.coerce.number().int().positive().default(1),
   PENDING_RECOVERY_THRESHOLD_MS: z.coerce.number().int().positive().default(30000),
+  EMAIL_JOB_ATTEMPTS: z.coerce.number().int().positive().default(3),
 
   // Authentication placeholders
   JWT_SECRET: z.string().min(1),

@@ -11,6 +11,7 @@ export interface CreateCampaignInput {
   delaySeconds: number;
   hourlyLimit: number;
   recipients: string[];
+  forceFailAttempts?: number;
 }
 
 export class CampaignService {
@@ -27,6 +28,7 @@ export class CampaignService {
       delaySeconds,
       hourlyLimit,
       recipients,
+      forceFailAttempts,
     } = input;
 
     // 1. Verify User exists
@@ -112,10 +114,11 @@ export class CampaignService {
           'send-email',
           {
             recipientId: recipient.id,
+            forceFailAttempts,
           },
           {
             delay: delayMs,
-            jobId: deterministicJobId, // Deterministic jobId: email:<recipientId>
+            jobId: deterministicJobId,
           }
         );
 

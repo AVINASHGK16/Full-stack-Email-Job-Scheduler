@@ -13,6 +13,7 @@ export const createCampaignSchema = z.object({
   recipients: z
     .array(z.string().email('Invalid email address format'))
     .nonempty('recipients list cannot be empty'),
+  forceFailAttempts: z.coerce.number().int().nonnegative().optional(),
 });
 
 export type CreateCampaignPayload = z.infer<typeof createCampaignSchema>;
