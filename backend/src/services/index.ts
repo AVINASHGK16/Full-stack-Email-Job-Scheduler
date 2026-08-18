@@ -1,2 +1,3 @@
 export * from './email.service';
 export * from './campaign.service';
+export * from './recovery.service';
