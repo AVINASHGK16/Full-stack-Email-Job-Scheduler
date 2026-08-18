@@ -1,20 +1,23 @@
-import express, { Request, Response } from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
+import app from './app';
+import { env } from './config/env';
 
-dotenv.config({ path: '../.env' });
+const PORT = env.PORT;
 
-const app = express();
-const PORT = process.env.PORT || 5000;
-
-app.use(cors());
-app.use(express.json());
-
-// Health Check Endpoint
-app.get('/health', (_req: Request, res: Response) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+const server = app.listen(PORT, () => {
+  console.log(`🚀 Server running in ${env.NODE_ENV} mode on http://localhost:${PORT}`);
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+// Gracefully handle unhandled promise rejections and uncaught exceptions
+process.on('unhandledRejection', (err: Error) => {
+  console.error('💥 UNHANDLED REJECTION! Shutting down...');
+  console.error(err.name, err.message);
+  server.close(() => {
+    process.exit(1);
+  });
 });
+
+process.on('uncaughtException', (err: Error) => {
+  console.error('💥 UNCAUGHT EXCEPTION! Shutting down...');
+  console.error(err.name, err.message);
+  process.exit(1);
+});
