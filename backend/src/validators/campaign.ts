@@ -1,7 +1,14 @@
 import { z } from 'zod';
 
+/**
+ * Zod schema for POST /campaigns request body.
+ *
+ * NOTE: `userId` is intentionally excluded from this schema.
+ * The authenticated user's ID is sourced exclusively from req.user.id
+ * (the server-side session) inside the controller. Accepting it from the
+ * client would allow identity tampering.
+ */
 export const createCampaignSchema = z.object({
-  userId: z.string().min(1, 'userId is required'),
   senderId: z.string().min(1, 'senderId is required'),
   subject: z.string().min(1, 'subject is required'),
   body: z.string().min(1, 'body is required'),
@@ -17,3 +24,4 @@ export const createCampaignSchema = z.object({
 });
 
 export type CreateCampaignPayload = z.infer<typeof createCampaignSchema>;
+

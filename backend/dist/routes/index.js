@@ -7,9 +7,11 @@ const express_1 = require("express");
 const health_1 = __importDefault(require("./health"));
 const testJob_1 = __importDefault(require("./testJob"));
 const campaigns_1 = __importDefault(require("./campaigns"));
+const auth_1 = __importDefault(require("./auth"));
 const router = (0, express_1.Router)();
 // Mount individual route handlers
 router.use('/health', health_1.default);
 router.use('/test-job', testJob_1.default);
 router.use('/campaigns', campaigns_1.default);
+router.use('/auth', auth_1.default);
 exports.default = router;
