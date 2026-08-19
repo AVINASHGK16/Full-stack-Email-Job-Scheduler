@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { scheduleCampaign, getSenders, ApiError } from '../services/api';
@@ -164,31 +164,26 @@ export default function ComposePage() {
     return getUnifiedRecipientSummary(to, importedEmails);
   }, [to, importedEmails]);
 
-  /* ── Fetch Senders on Mount ── */
-  useEffect(() => {
-    let cancelled = false;
-
-    getSenders()
-      .then(data => {
-        if (!cancelled) {
-          setSenders(data);
-          if (data.length > 0) {
-            setSelectedSenderId(data[0].id);
-          }
-          setLoadingSenders(false);
-        }
-      })
-      .catch(err => {
-        if (!cancelled) {
-          setApiError(err instanceof Error ? err.message : 'Failed to load sender accounts');
-          setLoadingSenders(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
+  /* ── Fetch Senders on Mount / Refresh ── */
+  const fetchSenders = useCallback(async () => {
+    setLoadingSenders(true);
+    try {
+      const data = await getSenders();
+      setSenders(data);
+      if (data.length > 0) {
+        setSelectedSenderId(prev => (prev && data.some(s => s.id === prev) ? prev : data[0].id));
+      }
+      setApiError(null);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : 'Failed to load sender accounts');
+    } finally {
+      setLoadingSenders(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchSenders();
+  }, [fetchSenders]);
 
   /* ── Handle File Upload ── */
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -329,7 +324,11 @@ export default function ComposePage() {
   const isScheduleDisabled = submitting || loadingSenders || senders.length === 0;
 
   return (
-    <DashboardLayout activeNav="compose">
+    <DashboardLayout
+      activeNav="compose"
+      onRefresh={fetchSenders}
+      isRefreshing={loadingSenders}
+    >
       <div className="compose-content">
 
         {/* ── Page header ── */}

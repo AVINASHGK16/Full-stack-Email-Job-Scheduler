@@ -163,7 +163,11 @@ export default function SendersPage() {
   }
 
   return (
-    <DashboardLayout activeNav="senders">
+    <DashboardLayout
+      activeNav="senders"
+      onRefresh={fetchSenders}
+      isRefreshing={loading}
+    >
       <div className="senders-content">
 
         {/* ── Page Header ── */}
