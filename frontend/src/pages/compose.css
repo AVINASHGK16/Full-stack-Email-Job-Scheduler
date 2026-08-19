@@ -59,6 +59,164 @@
   line-height: 1.5;
 }
 
+/* ── Partial success card (HTTP 207 Multi-Status) ─────────── */
+.compose-partial-card {
+  padding: 20px;
+  margin-bottom: 20px;
+  background-color: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.compose-partial-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.compose-partial-icon {
+  font-size: 1.25rem;
+}
+
+.compose-partial-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.compose-partial-desc {
+  font-size: 0.875rem;
+  color: #78350f;
+  margin: 0 0 16px;
+}
+
+.compose-partial-stats {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.compose-partial-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 18px;
+  border-radius: 8px;
+  background-color: #ffffff;
+  border: 1px solid #fef3c7;
+  min-width: 70px;
+}
+
+.compose-partial-stat.success {
+  border-color: #bbf7d0;
+  background-color: #f0fdf4;
+}
+
+.compose-partial-stat.failure {
+  border-color: #fecaca;
+  background-color: #fef2f2;
+}
+
+.compose-partial-stat.total {
+  border-color: #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.compose-stat-num {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.compose-partial-stat.success .compose-stat-num {
+  color: #15803d;
+}
+
+.compose-partial-stat.failure .compose-stat-num {
+  color: #b91c1c;
+}
+
+.compose-stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.compose-partial-failures-list {
+  background-color: #ffffff;
+  border: 1px solid #fef3c7;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 0.8125rem;
+  color: #374151;
+}
+
+.compose-failures-title {
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 6px;
+}
+
+.compose-partial-failures-list ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.compose-partial-failures-list li {
+  margin-bottom: 4px;
+}
+
+.compose-partial-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.compose-btn-partial-dismiss {
+  padding: 8px 16px;
+  background: none;
+  border: 1px solid #d97706;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #92400e;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color 0.15s ease;
+}
+
+.compose-btn-partial-dismiss:hover {
+  background-color: #fef3c7;
+}
+
+.compose-btn-partial-view {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 18px;
+  background-color: #d97706;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: inherit;
+  transition: background-color 0.15s ease;
+}
+
+.compose-btn-partial-view:hover {
+  background-color: #b45309;
+}
+
+
 /* ── Form card ────────────────────────────────────────────── */
 .compose-form {
   display: flex;

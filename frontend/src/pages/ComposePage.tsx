@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { scheduleCampaign, getSenders, ApiError } from '../services/api';
 import type { SenderItem } from '../types/sender';
+import type { ScheduleCampaignPartial } from '../types/campaign';
 import './compose.css';
 
 interface FieldErrors {
@@ -119,9 +120,8 @@ function getUnifiedRecipientSummary(manualRaw: string, imported: string[]) {
  *
  * Form fields are controlled state. Fetches the authenticated user's senders
  * from GET /senders on mount, populating the "From" selector.
- * Supports multiple manual recipients (comma/newline/space separated) and CSV/TXT file import.
- * Performs client-side validation before calling POST /campaigns.
- * Navigates to /scheduled on success (201 or 207).
+ * Supports multiple manual recipients and CSV/TXT file import.
+ * Handles 201 Created (navigate to /scheduled) and 207 Multi-Status (partial success UI with failure breakdown).
  */
 export default function ComposePage() {
   const navigate = useNavigate();
@@ -145,9 +145,10 @@ export default function ComposePage() {
   const [fileName, setFileName]             = useState<string | null>(null);
 
   /* ── Validation & Submission state ── */
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [submitting, setSubmitting]   = useState(false);
-  const [apiError, setApiError]       = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors]     = useState<FieldErrors>({});
+  const [submitting, setSubmitting]       = useState(false);
+  const [apiError, setApiError]           = useState<string | null>(null);
+  const [partialResult, setPartialResult] = useState<ScheduleCampaignPartial | null>(null);
 
   /* ── Computed Unified Recipient Summary ── */
   const recipientSummary = useMemo(() => {
@@ -257,6 +258,7 @@ export default function ComposePage() {
   /* ── Submit handler ── */
   async function handleSubmit() {
     setApiError(null);
+    setPartialResult(null);
 
     // Prevent duplicate simultaneous submissions
     if (submitting) return;
@@ -273,7 +275,7 @@ export default function ComposePage() {
     const startTime = new Date(`${date}T${time}:00`).toISOString();
 
     try {
-      await scheduleCampaign({
+      const response = await scheduleCampaign({
         senderId:     selectedSenderId,
         subject:      subject.trim(),
         body:         message.trim(),
@@ -283,7 +285,13 @@ export default function ComposePage() {
         recipients:   finalRecipients,
       });
 
-      // 201 Created or 207 Multi-Status — both treated as success for navigation.
+      // Handle 207 Multi-Status (partial success)
+      if (response.status === 'partial_success' || 'failures' in response) {
+        setPartialResult(response as ScheduleCampaignPartial);
+        return;
+      }
+
+      // Handle 201 Created (full success)
       navigate('/scheduled');
     } catch (err) {
       if (err instanceof ApiError) {
@@ -292,11 +300,17 @@ export default function ComposePage() {
             'You must be logged in to schedule an email. ' +
             'Please log in with your Google account first.'
           );
+        } else if (err.statusCode === 403) {
+          setApiError('Forbidden: You do not have permission to use the selected sender account.');
+        } else if (err.statusCode === 404) {
+          setApiError('The requested sender account or user profile could not be found.');
+        } else if (err.statusCode === 400) {
+          setApiError(err.message || 'Validation failed. Please check your schedule settings and recipient list.');
         } else {
-          setApiError(err.message);
+          setApiError(err.message || `Scheduling failed with HTTP error ${err.statusCode}.`);
         }
       } else {
-        setApiError('An unexpected error occurred. Please try again.');
+        setApiError('Unable to connect to the scheduling service. Please check your network and try again.');
       }
     } finally {
       setSubmitting(false);
@@ -321,6 +335,64 @@ export default function ComposePage() {
         {apiError && (
           <div className="compose-error" role="alert">
             {apiError}
+          </div>
+        )}
+
+        {/* ── Partial Success (HTTP 207 Multi-Status) Result Card ── */}
+        {partialResult && (
+          <div className="compose-partial-card" role="alert">
+            <div className="compose-partial-header">
+              <span className="compose-partial-icon" aria-hidden="true">⚠️</span>
+              <div className="compose-partial-title">
+                Campaign Created with Partial Failures (HTTP 207)
+              </div>
+            </div>
+            <p className="compose-partial-desc">
+              Your campaign was created in the database, but some recipient jobs could not be queued.
+            </p>
+
+            <div className="compose-partial-stats">
+              <div className="compose-partial-stat success">
+                <span className="compose-stat-num">{partialResult.recipients.length}</span>
+                <span className="compose-stat-label">Scheduled</span>
+              </div>
+              <div className="compose-partial-stat failure">
+                <span className="compose-stat-num">{partialResult.failures.length}</span>
+                <span className="compose-stat-label">Failed</span>
+              </div>
+              <div className="compose-partial-stat total">
+                <span className="compose-stat-num">
+                  {partialResult.recipients.length + partialResult.failures.length}
+                </span>
+                <span className="compose-stat-label">Total</span>
+              </div>
+            </div>
+
+            {partialResult.failures.length > 0 && (
+              <div className="compose-partial-failures-list">
+                <div className="compose-failures-title">Queue Failures:</div>
+                <ul>
+                  {partialResult.failures.map(f => (
+                    <li key={f.id}>
+                      <strong>{f.email}</strong>: {f.error}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="compose-partial-actions">
+              <button
+                type="button"
+                className="compose-btn-partial-dismiss"
+                onClick={() => setPartialResult(null)}
+              >
+                Dismiss
+              </button>
+              <Link to="/scheduled" className="compose-btn-partial-view">
+                View Scheduled Emails →
+              </Link>
+            </div>
           </div>
         )}
 
