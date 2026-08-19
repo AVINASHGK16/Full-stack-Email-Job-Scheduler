@@ -117,7 +117,7 @@ Navigate to `http://localhost:3000/login` to access the application.
 The repository includes automated end-to-end verification suites in `backend/src/scripts/`:
 
 ```bash
-# Run all audit test suites:
+# Core automated audit test suites:
 cd backend
 
 # 1. Authentication & Cross-User Data Isolation Audit (16/16 Passed)
