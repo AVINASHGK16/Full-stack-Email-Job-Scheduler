@@ -1,16 +1,87 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
+import { scheduleCampaign, ApiError } from '../services/api';
 import './compose.css';
+
+/**
+ * SENDER_ID — The development seed sender UUID.
+ *
+ * The backend seed (backend/src/db/seed.ts) always creates:
+ *   id: '00000000-0000-0000-0000-000000000000'
+ *
+ * POST /campaigns requires a valid senderId. Phase 9.6 hardcodes this seeded
+ * value because the Compose UI has no sender-selection control. A later phase
+ * will add proper sender management.
+ */
+const SENDER_ID = '00000000-0000-0000-0000-000000000000';
 
 /**
  * ComposePage — /compose
  *
- * Visual-only email composition form for Phase 9.5.
- * No backend calls, no API requests, no scheduling logic.
- * Cancel navigates back to /scheduled via React Router Link.
- * Schedule Email button has no-op onClick.
+ * Phase 9.6: form fields are controlled state. On submit, calls POST /campaigns
+ * via the api service. Navigates to /scheduled on success (201 or 207).
+ * Displays an inline error on failure — including a login hint on 401.
+ *
+ * No backend files were modified for this page.
+ * No new dependencies were installed.
  */
 export default function ComposePage() {
+  const navigate = useNavigate();
+
+  /* ── Form state ── */
+  const [to, setTo]           = useState('john@example.com');
+  const [subject, setSubject] = useState('Meeting Follow-up');
+  const [message, setMessage] = useState(
+    'Hi John,\n\nJust following up regarding our meeting earlier this week. I wanted to make sure we\'re aligned on the next steps before the end of the month.\n\nLooking forward to hearing from you.\n\nBest regards,\nOliver'
+  );
+  const [date, setDate]       = useState('2026-08-25');
+  const [time, setTime]       = useState('09:00');
+
+  /* ── Submit state ── */
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError]           = useState<string | null>(null);
+
+  /* ── Submit handler ── */
+  async function handleSubmit() {
+    setError(null);
+    setSubmitting(true);
+
+    // Combine date + time into an ISO timestamp the backend accepts.
+    // The backend validates: new Date(startTime).getTime() > Date.now()
+    const startTime = new Date(`${date}T${time}:00`).toISOString();
+
+    try {
+      await scheduleCampaign({
+        senderId:     SENDER_ID,
+        subject:      subject.trim(),
+        body:         message.trim(),
+        startTime,
+        delaySeconds: 0,
+        hourlyLimit:  0,
+        recipients:   [to.trim()],
+      });
+
+      // 201 Created or 207 Multi-Status — both treated as success for navigation.
+      navigate('/scheduled');
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.statusCode === 401) {
+          setError(
+            'You must be logged in to schedule an email. ' +
+            'Please log in with your Google account first.'
+          );
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <DashboardLayout activeNav="compose">
       <div className="compose-content">
@@ -23,43 +94,55 @@ export default function ComposePage() {
           <h1 className="compose-page-title">Compose</h1>
         </div>
 
+        {/* ── Inline error banner ── */}
+        {error && (
+          <div className="compose-error" role="alert">
+            {error}
+          </div>
+        )}
+
         {/* ── Compose form card ── */}
         <div className="compose-form">
 
           {/* To */}
           <div className="compose-field-row">
-            <span className="compose-field-label">To</span>
+            <label className="compose-field-label" htmlFor="compose-to">To</label>
             <input
               id="compose-to"
               className="compose-field-input"
               type="email"
               placeholder="Recipient email address"
-              defaultValue="john@example.com"
+              value={to}
+              onChange={e => setTo(e.target.value)}
               aria-label="Recipient email address"
             />
           </div>
 
           {/* Subject */}
           <div className="compose-field-row">
-            <span className="compose-field-label">Subject</span>
+            <label className="compose-field-label" htmlFor="compose-subject">Subject</label>
             <input
               id="compose-subject"
               className="compose-field-input"
               type="text"
               placeholder="Email subject"
-              defaultValue="Meeting Follow-up"
+              value={subject}
+              onChange={e => setSubject(e.target.value)}
               aria-label="Email subject"
             />
           </div>
 
           {/* Message */}
           <div className="compose-message-wrapper">
-            <span className="compose-message-label">Message</span>
+            <label className="compose-message-label" htmlFor="compose-message">
+              Message
+            </label>
             <textarea
               id="compose-message"
               className="compose-message-textarea"
               placeholder="Write your message here..."
-              defaultValue={`Hi John,\n\nJust following up regarding our meeting earlier this week. I wanted to make sure we're aligned on the next steps before the end of the month.\n\nLooking forward to hearing from you.\n\nBest regards,\nOliver`}
+              value={message}
+              onChange={e => setMessage(e.target.value)}
               aria-label="Email message"
             />
           </div>
@@ -74,7 +157,8 @@ export default function ComposePage() {
                   id="compose-date"
                   className="compose-schedule-input"
                   type="date"
-                  defaultValue="2026-08-25"
+                  value={date}
+                  onChange={e => setDate(e.target.value)}
                   aria-label="Schedule date"
                 />
               </div>
@@ -84,7 +168,8 @@ export default function ComposePage() {
                   id="compose-time"
                   className="compose-schedule-input"
                   type="time"
-                  defaultValue="09:00"
+                  value={time}
+                  onChange={e => setTime(e.target.value)}
                   aria-label="Schedule time"
                 />
               </div>
@@ -93,18 +178,24 @@ export default function ComposePage() {
 
           {/* Actions */}
           <div className="compose-actions">
-            <Link to="/scheduled" className="compose-btn-cancel">
+            <Link
+              to="/scheduled"
+              className="compose-btn-cancel"
+              aria-disabled={submitting}
+              tabIndex={submitting ? -1 : undefined}
+            >
               Cancel
             </Link>
             <button
               id="compose-submit"
               type="button"
               className="compose-btn-primary"
-              onClick={() => {}}
-              aria-label="Schedule email"
+              onClick={handleSubmit}
+              disabled={submitting}
+              aria-label={submitting ? 'Scheduling…' : 'Schedule email'}
             >
               <CalendarIcon />
-              Schedule Email
+              {submitting ? 'Scheduling…' : 'Schedule Email'}
             </button>
           </div>
 
@@ -114,7 +205,7 @@ export default function ComposePage() {
   );
 }
 
-/* ── Inline SVG icons ─────────────────────────────────────── */
+/* ── Inline SVG icons ─────────────────────────────────────────────────────── */
 
 function BackArrowIcon() {
   return (
