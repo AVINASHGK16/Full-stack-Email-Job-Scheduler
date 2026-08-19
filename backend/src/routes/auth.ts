@@ -40,10 +40,10 @@ authRouter.get(
     session: true,
   }),
   (_req, res) => {
-    // Authentication succeeded — redirect to /auth/me so the browser
-    // can confirm the session is active. Phase 9 will redirect to the
-    // frontend dashboard instead.
-    res.redirect('/auth/me');
+    // Authentication succeeded — redirect to the frontend dashboard.
+    // Phase 9 TODO completed: session is established, send the browser
+    // to the React SPA so the user lands on the dashboard.
+    res.redirect('http://localhost:3000/scheduled');
   }
 );
 

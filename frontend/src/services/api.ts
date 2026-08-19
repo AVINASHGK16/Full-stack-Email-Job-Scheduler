@@ -12,9 +12,67 @@ import type {
   ScheduleCampaignResponse,
   ApiErrorResponse,
 } from '../types/campaign';
+import type { AuthUser, GetMeResponse } from '../types/auth';
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000';
+
+/* ── Auth ────────────────────────────────────────────────────────────────── */
+
+/**
+ * GET /auth/me
+ *
+ * Returns the currently authenticated user's profile.
+ * Rejects with ApiError(401) if the session has expired or never existed.
+ */
+export async function getMe(): Promise<AuthUser> {
+  const res = await fetch(`${API_BASE_URL}/auth/me`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  if (res.ok) {
+    const body = (await res.json()) as GetMeResponse;
+    return body.data;
+  }
+
+  let errBody: ApiErrorResponse | null = null;
+  try {
+    errBody = (await res.json()) as ApiErrorResponse;
+  } catch {
+    // non-JSON error body — fall through
+  }
+  throw new ApiError(
+    errBody?.message ?? `Request failed with status ${res.status}`,
+    res.status
+  );
+}
+
+/**
+ * POST /auth/logout
+ *
+ * Destroys the server-side session and clears the session cookie.
+ * Resolves on 200; rejects with ApiError otherwise.
+ */
+export async function logoutUser(): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/auth/logout`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+
+  if (res.ok) return;
+
+  let errBody: ApiErrorResponse | null = null;
+  try {
+    errBody = (await res.json()) as ApiErrorResponse;
+  } catch {
+    // non-JSON error body — fall through
+  }
+  throw new ApiError(
+    errBody?.message ?? `Logout failed with status ${res.status}`,
+    res.status
+  );
+}
 
 /* ── Campaigns ───────────────────────────────────────────────────────────── */
 

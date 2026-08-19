@@ -101,7 +101,39 @@
   flex-shrink: 0;
 }
 
-/* ── Compose button (White background + Green outline + Green text) ── */
+/* ── Logout button ─────────────────────────────────────────── */
+.sidebar-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 12px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  text-align: left;
+  margin-bottom: 12px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.sidebar-logout-btn:hover {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.sidebar-logout-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+
 .sidebar-compose-btn {
   display: block;
   width: 100%;
