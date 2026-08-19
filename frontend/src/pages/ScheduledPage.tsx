@@ -105,6 +105,7 @@ export default function ScheduledPage() {
             badgeType="scheduled"
             subject={item.subject}
             preview={item.bodyPreview}
+            scheduledAt={item.scheduledAt}
             isStarred={isStarred(item.id)}
             onToggleStar={toggleStar}
           />

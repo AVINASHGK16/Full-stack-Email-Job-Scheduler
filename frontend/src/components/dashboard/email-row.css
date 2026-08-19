@@ -102,6 +102,28 @@
   flex: 1;
 }
 
+/* ── Scheduled Timestamp ─────────────────────────────────── */
+.email-row-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #4b5563;
+  background-color: #f3f4f6;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border: 1px solid #e5e7eb;
+}
+
+.email-row-time svg {
+  width: 14px;
+  height: 14px;
+  color: #6b7280;
+}
+
 /* ── Star Action ──────────────────────────────────────────── */
 .email-row-star {
   color: #9ca3af;
@@ -140,5 +162,10 @@
 
   .email-row-separator {
     display: none;
+  }
+
+  .email-row-time {
+    font-size: 0.75rem;
+    padding: 2px 6px;
   }
 }
