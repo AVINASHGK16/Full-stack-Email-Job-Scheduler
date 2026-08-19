@@ -7,6 +7,7 @@ const redis_1 = require("../config/redis");
 const env_1 = require("../config/env");
 const email_service_1 = require("../services/email.service");
 const rateLimit_service_1 = require("../services/rateLimit.service");
+const email_queue_1 = require("../queues/email.queue");
 exports.emailWorker = new bullmq_1.Worker('email-scheduler', async (job) => {
     const { recipientId } = job.data;
     console.log(`[${new Date().toISOString()}] 👷 Worker picked up job ${job.id} for Recipient ID: ${recipientId}`);
@@ -25,20 +26,24 @@ exports.emailWorker = new bullmq_1.Worker('email-scheduler', async (job) => {
         console.warn(`⚠️ Recipient ${recipientId} not found in database. Skipping.`);
         return { skipped: true, reason: 'not_found' };
     }
-    // 2. Check if already sent
+    // 2. Check if already sent (Idempotency guarantee)
     if (recipient.status === 'SENT') {
         console.log(`ℹ️ Recipient ${recipient.email} is already marked SENT. Skipping.`);
         return { skipped: true, reason: 'already_sent' };
     }
     const campaign = recipient.campaign;
     const sender = campaign.sender;
-    // 3. Hourly rate-limit check (sender-scoped, shared Redis counter)
+    // 3. Hourly rate-limit check (sender-scoped, shared Redis counter across all workers)
     // Must happen AFTER SENT check so already-sent recipients don't consume a slot.
     const allowed = await rateLimit_service_1.RateLimitService.checkAndIncrement(sender.id, campaign.hourlyLimit);
     if (!allowed) {
+        const ttl = await rateLimit_service_1.RateLimitService.getTTL(sender.id);
+        const delayMs = Math.max(ttl > 0 ? ttl * 1000 : 60000, 10000);
         console.warn(`🚫 Rate limit reached for sender ${sender.id} (hourlyLimit=${campaign.hourlyLimit}). ` +
-            `Job ${job.id} denied. Recipient ${recipient.email} stays QUEUED. (Phase 7.4 will reschedule.)`);
-        return { skipped: true, reason: 'rate_limited' };
+            `Job ${job.id} denied. Recipient ${recipient.email} stays QUEUED and rescheduled in ${Math.round(delayMs / 1000)}s.`);
+        // Reschedule job to automatically run in the next hourly window
+        await email_queue_1.emailQueue.add('send-email', { recipientId: recipient.id }, { delay: delayMs });
+        return { skipped: true, reason: 'rate_limited', rescheduledInMs: delayMs };
     }
     // 4. Update Campaign status to SENDING if it is PENDING
     if (campaign.status === 'PENDING') {
@@ -56,7 +61,7 @@ exports.emailWorker = new bullmq_1.Worker('email-scheduler', async (job) => {
             throw new Error(`Controlled simulation failure (attempt ${job.attemptsMade + 1})`);
         }
         console.log(`✉️ Sending email to ${recipient.email} via Ethereal SMTP...`);
-        // 4. Call Nodemailer EmailService
+        // 5. Call Nodemailer EmailService
         const result = await email_service_1.EmailService.sendEmail({
             host: env_1.env.SMTP_HOST,
             port: env_1.env.SMTP_PORT,
@@ -71,7 +76,7 @@ exports.emailWorker = new bullmq_1.Worker('email-scheduler', async (job) => {
         if (result.previewUrl) {
             console.log(`🔗 Ethereal Preview URL: ${result.previewUrl}`);
         }
-        // 5. Update Recipient to SENT
+        // 6. Update Recipient to SENT
         await db_1.prisma.recipient.update({
             where: { id: recipient.id },
             data: {
@@ -89,7 +94,7 @@ exports.emailWorker = new bullmq_1.Worker('email-scheduler', async (job) => {
         const isFinalAttempt = job.attemptsMade + 1 >= maxAttempts;
         if (isFinalAttempt) {
             console.error(`❌ Final attempt (${job.attemptsMade + 1}/${maxAttempts}) failed for ${recipient.email}. Marking as FAILED.`);
-            // 6. Update Recipient to FAILED only on final attempt
+            // 7. Update Recipient to FAILED only on final attempt
             await db_1.prisma.recipient.update({
                 where: { id: recipient.id },
                 data: {
@@ -113,7 +118,7 @@ exports.emailWorker = new bullmq_1.Worker('email-scheduler', async (job) => {
         throw err;
     }
     finally {
-        // 7. Check Campaign completion: Campaign is COMPLETED if all recipients are in a terminal state (SENT or FAILED)
+        // 8. Check Campaign completion: Campaign is COMPLETED if all recipients are in a terminal state (SENT or FAILED)
         const remainingCount = await db_1.prisma.recipient.count({
             where: {
                 campaignId: campaign.id,

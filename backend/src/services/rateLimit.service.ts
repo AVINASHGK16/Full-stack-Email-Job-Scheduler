@@ -37,10 +37,17 @@ export class RateLimitService {
   /**
    * Atomically checks the hourly counter and increments it if under the limit.
    *
+   * @param senderId    - Unique sender ID.
+   * @param hourlyLimit - Maximum emails permitted per hour (0 = unlimited).
    * @returns true  — slot reserved, send is allowed
    * @returns false — limit reached, send is denied
    */
   static async checkAndIncrement(senderId: string, hourlyLimit: number): Promise<boolean> {
+    // If hourlyLimit is 0 or non-positive, rate limiting is disabled (unlimited sends)
+    if (!hourlyLimit || hourlyLimit <= 0) {
+      return true;
+    }
+
     // TTL: 1 hour + 60 s buffer so the key outlives the window for late arrivals
     const TTL_SECONDS = 3600 + 60;
     const key = RateLimitService.getKey(senderId);

@@ -4,6 +4,7 @@ import { redisConnection } from '../config/redis';
 import { env } from '../config/env';
 import { EmailService } from '../services/email.service';
 import { RateLimitService } from '../services/rateLimit.service';
+import { emailQueue } from '../queues/email.queue';
 
 export const emailWorker = new Worker(
   'email-scheduler',
@@ -28,7 +29,7 @@ export const emailWorker = new Worker(
       return { skipped: true, reason: 'not_found' };
     }
 
-    // 2. Check if already sent
+    // 2. Check if already sent (Idempotency guarantee)
     if (recipient.status === 'SENT') {
       console.log(`ℹ️ Recipient ${recipient.email} is already marked SENT. Skipping.`);
       return { skipped: true, reason: 'already_sent' };
@@ -37,15 +38,25 @@ export const emailWorker = new Worker(
     const campaign = recipient.campaign;
     const sender = campaign.sender;
 
-    // 3. Hourly rate-limit check (sender-scoped, shared Redis counter)
+    // 3. Hourly rate-limit check (sender-scoped, shared Redis counter across all workers)
     // Must happen AFTER SENT check so already-sent recipients don't consume a slot.
     const allowed = await RateLimitService.checkAndIncrement(sender.id, campaign.hourlyLimit);
     if (!allowed) {
+      const ttl = await RateLimitService.getTTL(sender.id);
+      const delayMs = Math.max(ttl > 0 ? ttl * 1000 : 60000, 10000);
       console.warn(
         `🚫 Rate limit reached for sender ${sender.id} (hourlyLimit=${campaign.hourlyLimit}). ` +
-        `Job ${job.id} denied. Recipient ${recipient.email} stays QUEUED. (Phase 7.4 will reschedule.)`
+        `Job ${job.id} denied. Recipient ${recipient.email} stays QUEUED and rescheduled in ${Math.round(delayMs / 1000)}s.`
       );
-      return { skipped: true, reason: 'rate_limited' };
+
+      // Reschedule job to automatically run in the next hourly window
+      await emailQueue.add(
+        'send-email',
+        { recipientId: recipient.id },
+        { delay: delayMs }
+      );
+
+      return { skipped: true, reason: 'rate_limited', rescheduledInMs: delayMs };
     }
 
     // 4. Update Campaign status to SENDING if it is PENDING
@@ -67,7 +78,7 @@ export const emailWorker = new Worker(
 
       console.log(`✉️ Sending email to ${recipient.email} via Ethereal SMTP...`);
       
-      // 4. Call Nodemailer EmailService
+      // 5. Call Nodemailer EmailService
       const result = await EmailService.sendEmail({
         host: env.SMTP_HOST,
         port: env.SMTP_PORT,
@@ -84,7 +95,7 @@ export const emailWorker = new Worker(
         console.log(`🔗 Ethereal Preview URL: ${result.previewUrl}`);
       }
 
-      // 5. Update Recipient to SENT
+      // 6. Update Recipient to SENT
       await prisma.recipient.update({
         where: { id: recipient.id },
         data: {
@@ -104,7 +115,7 @@ export const emailWorker = new Worker(
 
       if (isFinalAttempt) {
         console.error(`❌ Final attempt (${job.attemptsMade + 1}/${maxAttempts}) failed for ${recipient.email}. Marking as FAILED.`);
-        // 6. Update Recipient to FAILED only on final attempt
+        // 7. Update Recipient to FAILED only on final attempt
         await prisma.recipient.update({
           where: { id: recipient.id },
           data: {
@@ -127,7 +138,7 @@ export const emailWorker = new Worker(
       // Throw error to trigger BullMQ retry mechanics
       throw err;
     } finally {
-      // 7. Check Campaign completion: Campaign is COMPLETED if all recipients are in a terminal state (SENT or FAILED)
+      // 8. Check Campaign completion: Campaign is COMPLETED if all recipients are in a terminal state (SENT or FAILED)
       const remainingCount = await prisma.recipient.count({
         where: {
           campaignId: campaign.id,
