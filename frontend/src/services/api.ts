@@ -22,6 +22,7 @@ import type {
   GetSendersResponse,
   CreateSenderRequest,
   CreateSenderResponse,
+  VerifySenderResponse,
 } from '../types/sender';
 
 export const API_BASE_URL =
@@ -161,6 +162,39 @@ export async function createSender(
 
   throw new ApiError(
     errBody?.message ?? `Request failed with status ${res.status}`,
+    res.status
+  );
+}
+
+/**
+ * POST /senders/:id/verify
+ *
+ * Verifies SMTP connection and credentials for the specified sender.
+ */
+export async function verifySender(
+  senderId: string
+): Promise<{ verified: boolean; message: string }> {
+  const res = await fetch(`${API_BASE_URL}/senders/${senderId}/verify`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+
+  if (res.ok) {
+    const body = (await res.json()) as VerifySenderResponse;
+    return body.data;
+  }
+
+  handleAuthFailure(res.status);
+
+  let errBody: ApiErrorResponse | null = null;
+  try {
+    errBody = (await res.json()) as ApiErrorResponse;
+  } catch {
+    // non-JSON error body — fall through
+  }
+
+  throw new ApiError(
+    errBody?.message ?? `Verification failed with status ${res.status}`,
     res.status
   );
 }

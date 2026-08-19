@@ -1,7 +1,7 @@
 /**
  * sender.ts — Frontend TypeScript types for the Sender API.
  *
- * Derived from GET /senders and POST /senders backend responses.
+ * Derived from GET /senders, POST /senders, and POST /senders/:id/verify backend responses.
  */
 
 export interface SenderItem {
@@ -26,4 +26,12 @@ export interface CreateSenderRequest {
 export interface CreateSenderResponse {
   status: 'success';
   data: SenderItem;
+}
+
+export interface VerifySenderResponse {
+  status: 'success';
+  data: {
+    verified: boolean;
+    message: string;
+  };
 }

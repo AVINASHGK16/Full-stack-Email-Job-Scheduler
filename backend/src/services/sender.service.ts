@@ -1,4 +1,6 @@
+import nodemailer from 'nodemailer';
 import { prisma } from '../db';
+import { env } from '../config/env';
 import { AppError } from '../middleware/error';
 import type { CreateSenderPayload } from '../validators/sender';
 
@@ -80,5 +82,52 @@ export class SenderService {
     });
 
     return sender;
+  }
+
+  /**
+   * Verifies SMTP connection and authentication for a specific sender.
+   *
+   * Security & Ownership:
+   * - Enforces `where: { id: senderId, userId }` so only senders owned by the
+   *   authenticated user can be tested.
+   * - Uses dedicated `transporter.verify()` without dispatching any campaign emails.
+   * - Never exposes SMTP credentials in return values or error responses.
+   *
+   * @param userId - Sourced strictly from req.user.id.
+   * @param senderId - Sourced from URL parameter :id.
+   */
+  public static async verifySender(userId: string, senderId: string) {
+    const sender = await prisma.sender.findFirst({
+      where: {
+        id: senderId,
+        userId,
+      },
+    });
+
+    if (!sender) {
+      throw new AppError('Sender not found', 404);
+    }
+
+    try {
+      const transporter = nodemailer.createTransport({
+        host: env.SMTP_HOST,
+        port: env.SMTP_PORT,
+        secure: env.SMTP_PORT === 465,
+        auth: {
+          user: sender.smtpUser,
+          pass: sender.smtpPassword,
+        },
+      });
+
+      await transporter.verify();
+
+      return {
+        verified: true,
+        message: 'SMTP connection verified successfully.',
+      };
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Authentication failed';
+      throw new AppError(`SMTP verification failed: ${errorMsg}`, 400);
+    }
   }
 }

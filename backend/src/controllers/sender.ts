@@ -71,3 +71,31 @@ export const createSender = async (
     next(error);
   }
 };
+
+/**
+ * Controller to handle POST /senders/:id/verify requests.
+ *
+ * Authentication boundary:
+ *  - Guarded by requireAuth middleware.
+ *  - userId is derived exclusively from req.user!.id (server session).
+ *  - Verifies SMTP credentials and connection.
+ */
+export const verifySender = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+
+    const result = await SenderService.verifySender(userId, id);
+
+    res.status(200).json({
+      status: 'success',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../layouts/DashboardLayout';
-import { getSenders, createSender, ApiError } from '../services/api';
+import { getSenders, createSender, verifySender, ApiError } from '../services/api';
 import type { SenderItem } from '../types/sender';
 import './senders.css';
 
@@ -12,12 +12,17 @@ interface FormErrors {
   smtpPassword?: string;
 }
 
+interface VerificationResult {
+  verified?: boolean;
+  error?: string;
+}
+
 /**
  * SendersPage — /senders
  *
  * Displays the authenticated user's configured email senders fetched from GET /senders.
- * Supports adding a new sender account via POST /senders with client-side validation,
- * inline error display, loading states, and automatic list refresh upon success.
+ * Supports adding a new sender account via POST /senders with client-side validation.
+ * Supports verifying SMTP connectivity for any sender via POST /senders/:id/verify.
  */
 export default function SendersPage() {
   const [senders, setSenders] = useState<SenderItem[]>([]);
@@ -35,6 +40,10 @@ export default function SendersPage() {
   const [formErrors, setFormErrors]         = useState<FormErrors>({});
   const [submitting, setSubmitting]         = useState<boolean>(false);
   const [createError, setCreateError]       = useState<string | null>(null);
+
+  /* ── Verification State ── */
+  const [verifyingId, setVerifyingId]                 = useState<string | null>(null);
+  const [verificationStatus, setVerificationStatus]   = useState<Record<string, VerificationResult>>({});
 
   /* ── Fetch Senders ── */
   const fetchSenders = useCallback(async () => {
@@ -139,6 +148,33 @@ export default function SendersPage() {
       }
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  /* ── Handle SMTP Verification ── */
+  async function handleVerify(senderId: string) {
+    if (verifyingId) return; // Prevent concurrent verifications
+
+    setVerifyingId(senderId);
+    setVerificationStatus(prev => ({
+      ...prev,
+      [senderId]: {},
+    }));
+
+    try {
+      const result = await verifySender(senderId);
+      setVerificationStatus(prev => ({
+        ...prev,
+        [senderId]: { verified: result.verified },
+      }));
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'SMTP verification failed';
+      setVerificationStatus(prev => ({
+        ...prev,
+        [senderId]: { error: errorMsg },
+      }));
+    } finally {
+      setVerifyingId(null);
     }
   }
 
@@ -340,22 +376,52 @@ export default function SendersPage() {
 
           {!loading && !error && senders.length > 0 && (
             <div className="senders-list">
-              {senders.map(sender => (
-                <div key={sender.id} className="sender-row">
-                  <div className="sender-info">
-                    <span className="sender-email">{sender.email}</span>
-                    <span className="sender-meta">
-                      Added on{' '}
-                      {new Date(sender.createdAt).toLocaleDateString(undefined, {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </span>
+              {senders.map(sender => {
+                const status = verificationStatus[sender.id];
+                const isVerifying = verifyingId === sender.id;
+
+                return (
+                  <div key={sender.id} className="sender-row">
+                    <div className="sender-info">
+                      <span className="sender-email">{sender.email}</span>
+                      <span className="sender-meta">
+                        Added on{' '}
+                        {new Date(sender.createdAt).toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </span>
+                    </div>
+
+                    <div className="sender-actions">
+                      {status?.verified && (
+                        <span className="sender-badge verified">✓ SMTP verified</span>
+                      )}
+
+                      {status?.error && (
+                        <span className="sender-badge failed" title={status.error}>
+                          SMTP failed
+                        </span>
+                      )}
+
+                      {!status?.verified && !status?.error && (
+                        <span className="sender-badge">Active</span>
+                      )}
+
+                      <button
+                        type="button"
+                        className="btn-verify-sender"
+                        onClick={() => handleVerify(sender.id)}
+                        disabled={isVerifying || verifyingId !== null}
+                        aria-label={`Verify SMTP connection for ${sender.email}`}
+                      >
+                        {isVerifying ? 'Verifying…' : 'Verify'}
+                      </button>
+                    </div>
                   </div>
-                  <span className="sender-badge">Active</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
