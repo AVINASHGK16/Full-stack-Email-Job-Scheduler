@@ -25,11 +25,12 @@ const envSchema = z.object({
   PENDING_RECOVERY_THRESHOLD_MS: z.coerce.number().int().positive().default(30000),
   EMAIL_JOB_ATTEMPTS: z.coerce.number().int().positive().default(3),
 
-  // Authentication placeholders
+  // Authentication & Frontend URLs
   JWT_SECRET: z.string().min(1),
   GOOGLE_CLIENT_ID: z.string().min(1),
   GOOGLE_CLIENT_SECRET: z.string().min(1),
   GOOGLE_CALLBACK_URL: z.string().min(1),
+  FRONTEND_URL: z.string().default('http://localhost:3000'),
 
   // SMTP Configuration
   SMTP_HOST: z.string().min(1),

@@ -11,7 +11,7 @@ const app: Express = express();
 
 // Standard middleware
 app.use(cors({
-  origin: env.NODE_ENV === 'production' ? false : 'http://localhost:3000',
+  origin: env.FRONTEND_URL,
   credentials: true, // Allow cookies to be sent cross-origin (needed for session cookie)
 }));
 app.use(express.json());

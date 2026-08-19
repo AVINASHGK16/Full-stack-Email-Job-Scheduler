@@ -2,6 +2,7 @@ import { Router } from 'express';
 import passport from '../config/passport';
 import { requireAuth } from '../middleware/auth';
 import { getMe, logout, oauthFailure } from '../controllers/auth.controller';
+import { env } from '../config/env';
 
 const authRouter = Router();
 
@@ -30,7 +31,7 @@ authRouter.get(
  * Passport exchanges the authorization code for tokens, fetches the profile,
  * and calls the verify callback in config/passport.ts.
  *
- * On success  → session is established, redirect to /auth/me for verification.
+ * On success  → session is established, redirect to frontend dashboard.
  * On failure  → redirect to /auth/failure which returns a clean 401 JSON response.
  */
 authRouter.get(
@@ -41,9 +42,7 @@ authRouter.get(
   }),
   (_req, res) => {
     // Authentication succeeded — redirect to the frontend dashboard.
-    // Phase 9 TODO completed: session is established, send the browser
-    // to the React SPA so the user lands on the dashboard.
-    res.redirect('http://localhost:3000/scheduled');
+    res.redirect(`${env.FRONTEND_URL}/scheduled`);
   }
 );
 
