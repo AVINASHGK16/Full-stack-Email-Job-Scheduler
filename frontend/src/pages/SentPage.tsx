@@ -1,30 +1,67 @@
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../layouts/DashboardLayout';
 import EmailRow from '../components/dashboard/EmailRow';
+import { getSentEmails } from '../services/api';
+import type { SentEmailItem } from '../types/campaign';
 
 /**
  * SentPage — /sent
  *
- * Displays the Sent emails list inside the Dashboard shell.
- * Uses static representative placeholder data for Phase 9.4.
+ * Displays the list of sent emails fetched from GET /campaigns/sent.
+ * Shows loading, error, empty, and populated states using the existing EmailRow component.
  */
 export default function SentPage() {
+  const [emails, setEmails] = useState<SentEmailItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getSentEmails()
+      .then(data => {
+        if (!cancelled) {
+          setEmails(data);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load sent emails');
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <DashboardLayout activeNav="sent">
       <div className="email-list">
-        <EmailRow
-          recipient="Sarah Wilson"
-          status="Sent"
-          badgeType="sent"
-          subject="Re: Project Update"
-          preview="Thanks for the update, Sarah. Looks good!"
-        />
-        <EmailRow
-          recipient="Support"
-          status="Sent"
-          badgeType="sent"
-          subject="Issue with login"
-          preview="I am having trouble logging in to the dashboard..."
-        />
+        {loading && (
+          <div className="email-list-status">Loading sent emails...</div>
+        )}
+
+        {!loading && error && (
+          <div className="email-list-error">{error}</div>
+        )}
+
+        {!loading && !error && emails.length === 0 && (
+          <div className="email-list-empty">No sent emails.</div>
+        )}
+
+        {!loading && !error && emails.map(item => (
+          <EmailRow
+            key={item.id}
+            recipient={item.email}
+            status="Sent"
+            badgeType="sent"
+            subject={item.subject}
+            preview={item.bodyPreview}
+          />
+        ))}
       </div>
     </DashboardLayout>
   );

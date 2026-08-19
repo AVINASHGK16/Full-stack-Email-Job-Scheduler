@@ -13,6 +13,8 @@ import type {
   ApiErrorResponse,
   ScheduledEmailItem,
   GetScheduledEmailsResponse,
+  SentEmailItem,
+  GetSentEmailsResponse,
 } from '../types/campaign';
 import type { AuthUser, GetMeResponse } from '../types/auth';
 
@@ -131,6 +133,34 @@ export async function getScheduledEmails(): Promise<ScheduledEmailItem[]> {
 
   if (res.ok) {
     const body = (await res.json()) as GetScheduledEmailsResponse;
+    return body.data;
+  }
+
+  let errBody: ApiErrorResponse | null = null;
+  try {
+    errBody = (await res.json()) as ApiErrorResponse;
+  } catch {
+    // non-JSON error body — fall through
+  }
+  throw new ApiError(
+    errBody?.message ?? `Request failed with status ${res.status}`,
+    res.status
+  );
+}
+
+/**
+ * GET /campaigns/sent
+ *
+ * Fetches all sent recipients belonging to the authenticated user.
+ */
+export async function getSentEmails(): Promise<SentEmailItem[]> {
+  const res = await fetch(`${API_BASE_URL}/campaigns/sent`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  if (res.ok) {
+    const body = (await res.json()) as GetSentEmailsResponse;
     return body.data;
   }
 

@@ -121,3 +121,13 @@ export interface GetScheduledEmailsResponse {
   data: ScheduledEmailItem[];
 }
 
+/* ── GET /campaigns/sent ─────────────────────────────────────────────────── */
+
+export type SentEmailItem = ScheduledEmailItem;
+
+export interface GetSentEmailsResponse {
+  status: 'success';
+  data: SentEmailItem[];
+}
+
+
