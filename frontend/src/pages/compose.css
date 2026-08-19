@@ -1,0 +1,275 @@
+/* compose.css — Scoped styles for the Compose page */
+
+/* ── Compose content wrapper ──────────────────────────────── */
+.compose-content {
+  padding: 32px 40px 48px;
+  max-width: 760px;
+  box-sizing: border-box;
+}
+
+/* ── Page header ──────────────────────────────────────────── */
+.compose-page-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.compose-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  color: #6b7280;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.compose-back-btn:hover {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+  color: #111827;
+}
+
+.compose-page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: -0.02em;
+}
+
+/* ── Form card ────────────────────────────────────────────── */
+.compose-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* ── Field row (To / Subject) ─────────────────────────────── */
+.compose-field-row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #f0f2f5;
+  min-height: 52px;
+}
+
+.compose-field-label {
+  flex-shrink: 0;
+  width: 84px;
+  padding: 14px 0 14px 20px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.compose-field-input {
+  flex: 1;
+  padding: 14px 20px 14px 8px;
+  border: none;
+  outline: none;
+  font-size: 0.9375rem;
+  color: #111827;
+  background-color: transparent;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.compose-field-input::placeholder {
+  color: #9ca3af;
+}
+
+/* ── Message area ─────────────────────────────────────────── */
+.compose-message-wrapper {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.compose-message-label {
+  padding: 14px 20px 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.compose-message-textarea {
+  flex: 1;
+  min-height: 200px;
+  padding: 12px 20px 16px;
+  border: none;
+  outline: none;
+  font-size: 0.9375rem;
+  color: #111827;
+  background-color: transparent;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+.compose-message-textarea::placeholder {
+  color: #9ca3af;
+}
+
+/* ── Schedule section ─────────────────────────────────────── */
+.compose-schedule-section {
+  padding: 20px 20px 24px;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.compose-schedule-heading {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-bottom: 14px;
+}
+
+.compose-schedule-fields {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.compose-schedule-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 180px;
+}
+
+.compose-schedule-field label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.compose-schedule-input {
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  color: #111827;
+  background-color: #ffffff;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.compose-schedule-input:focus {
+  border-color: #4ade80;
+}
+
+/* ── Actions row ──────────────────────────────────────────── */
+.compose-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+}
+
+/* Cancel button */
+.compose-btn-cancel {
+  padding: 10px 20px;
+  background: none;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  font-family: inherit;
+}
+
+.compose-btn-cancel:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* Primary: Schedule Email button */
+.compose-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  background-color: #2d6a2d;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  font-family: inherit;
+}
+
+.compose-btn-primary:hover {
+  background-color: #245924;
+}
+
+.compose-btn-primary:active {
+  background-color: #1d4d1d;
+}
+
+.compose-btn-primary svg {
+  flex-shrink: 0;
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .compose-content {
+    padding: 24px 16px 40px;
+  }
+
+  .compose-field-label {
+    width: 70px;
+    padding-left: 14px;
+  }
+
+  .compose-field-input {
+    padding-right: 14px;
+    padding-left: 6px;
+  }
+
+  .compose-schedule-fields {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .compose-schedule-field {
+    min-width: unset;
+  }
+
+  .compose-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 10px;
+    padding: 16px 14px;
+  }
+
+  .compose-btn-cancel,
+  .compose-btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+}

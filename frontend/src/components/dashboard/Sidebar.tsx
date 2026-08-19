@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import './sidebar.css';
 
 interface SidebarProps {
-  activeNav: 'scheduled' | 'sent';
+  activeNav: 'scheduled' | 'sent' | 'compose';
 }
 
 /**
@@ -32,7 +32,7 @@ export default function Sidebar({ activeNav }: SidebarProps) {
       </div>
 
       {/* ── Compose button (White background + green outline) ── */}
-      <Link to="/compose" className="sidebar-compose-btn">
+      <Link to="/compose" className={`sidebar-compose-btn${activeNav === 'compose' ? ' active' : ''}`}>
         Compose
       </Link>
 

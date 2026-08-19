@@ -126,6 +126,12 @@
   color: #245924;
 }
 
+.sidebar-compose-btn.active {
+  background-color: #2d6a2d;
+  border-color: #2d6a2d;
+  color: #ffffff;
+}
+
 /* ── Section label ────────────────────────────────────────── */
 .sidebar-section-label {
   font-size: 0.6875rem;
