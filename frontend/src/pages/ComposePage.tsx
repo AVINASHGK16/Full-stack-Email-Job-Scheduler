@@ -116,6 +116,17 @@ function getUnifiedRecipientSummary(manualRaw: string, imported: string[]) {
 }
 
 /**
+ * Returns today's date formatted as YYYY-MM-DD for HTML date input initialization.
+ */
+function getDefaultScheduleDate(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * ComposePage — /compose
  *
  * Form fields are controlled state. Fetches the authenticated user's senders
@@ -135,7 +146,7 @@ export default function ComposePage() {
   const [to, setTo]           = useState('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [date, setDate]       = useState('2026-08-25');
+  const [date, setDate]       = useState(getDefaultScheduleDate);
   const [time, setTime]       = useState('09:00');
 
   /* ── File Import state ── */
