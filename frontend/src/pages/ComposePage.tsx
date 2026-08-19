@@ -16,13 +16,63 @@ interface FieldErrors {
 }
 
 /**
+ * Extracts and deduplicates valid email addresses from raw text / CSV data.
+ */
+function extractEmailsFromText(text: string): string[] {
+  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+  const matches = text.match(emailRegex) || [];
+
+  const seen = new Set<string>();
+  const uniqueEmails: string[] = [];
+
+  for (const match of matches) {
+    const trimmed = match.trim();
+    const lower = trimmed.toLowerCase();
+    if (!seen.has(lower)) {
+      seen.add(lower);
+      uniqueEmails.push(trimmed);
+    }
+  }
+
+  return uniqueEmails;
+}
+
+/**
+ * Combines manual recipient input and imported recipient list, deduplicating them.
+ */
+function getCombinedRecipients(manualTo: string, imported: string[]): string[] {
+  const seen = new Set<string>();
+  const combined: string[] = [];
+
+  const trimmedManual = manualTo.trim();
+  if (trimmedManual) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (emailRegex.test(trimmedManual)) {
+      seen.add(trimmedManual.toLowerCase());
+      combined.push(trimmedManual);
+    }
+  }
+
+  for (const email of imported) {
+    const trimmed = email.trim();
+    const lower = trimmed.toLowerCase();
+    if (trimmed && !seen.has(lower)) {
+      seen.add(lower);
+      combined.push(trimmed);
+    }
+  }
+
+  return combined;
+}
+
+/**
  * ComposePage — /compose
  *
  * Form fields are controlled state. Fetches the authenticated user's senders
  * from GET /senders on mount, populating the "From" selector.
+ * Supports manual single recipient entry and CSV/TXT file import with client-side deduplication.
  * Performs client-side validation before calling POST /campaigns.
  * Navigates to /scheduled on success (201 or 207).
- * Displays field-level and API errors inline.
  */
 export default function ComposePage() {
   const navigate = useNavigate();
@@ -40,6 +90,10 @@ export default function ComposePage() {
   );
   const [date, setDate]       = useState('2026-08-25');
   const [time, setTime]       = useState('09:00');
+
+  /* ── File Import state ── */
+  const [importedEmails, setImportedEmails] = useState<string[]>([]);
+  const [fileName, setFileName]             = useState<string | null>(null);
 
   /* ── Validation & Submission state ── */
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -72,6 +126,34 @@ export default function ComposePage() {
     };
   }, []);
 
+  /* ── Handle File Upload ── */
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result;
+      if (typeof content === 'string') {
+        const emails = extractEmailsFromText(content);
+        setImportedEmails(emails);
+        setFileName(file.name);
+        if (fieldErrors.to) {
+          setFieldErrors(prev => ({ ...prev, to: undefined }));
+        }
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  /* ── Handle Remove File ── */
+  function handleRemoveFile() {
+    setImportedEmails([]);
+    setFileName(null);
+    const input = document.getElementById('compose-file-input') as HTMLInputElement | null;
+    if (input) input.value = '';
+  }
+
   /* ── Client-side form validation ── */
   function validateForm(): boolean {
     const errors: FieldErrors = {};
@@ -81,13 +163,15 @@ export default function ComposePage() {
     }
 
     const trimmedTo = to.trim();
-    if (!trimmedTo) {
-      errors.to = 'Recipient email address is required.';
-    } else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(trimmedTo)) {
-        errors.to = 'Please enter a valid email address (e.g. name@example.com).';
-      }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (trimmedTo && !emailRegex.test(trimmedTo)) {
+      errors.to = 'Please enter a valid email address (e.g. name@example.com).';
+    }
+
+    const combinedRecipients = getCombinedRecipients(to, importedEmails);
+    if (combinedRecipients.length === 0) {
+      errors.to = 'Recipient email is required (enter an address or upload a CSV/TXT file).';
     }
 
     if (!subject.trim()) {
@@ -130,6 +214,9 @@ export default function ComposePage() {
     const isValid = validateForm();
     if (!isValid) return;
 
+    const finalRecipients = getCombinedRecipients(to, importedEmails);
+    if (finalRecipients.length === 0) return;
+
     setSubmitting(true);
 
     const startTime = new Date(`${date}T${time}:00`).toISOString();
@@ -142,7 +229,7 @@ export default function ComposePage() {
         startTime,
         delaySeconds: 0,
         hourlyLimit:  0,
-        recipients:   [to.trim()],
+        recipients:   finalRecipients,
       });
 
       // 201 Created or 207 Multi-Status — both treated as success for navigation.
@@ -166,6 +253,7 @@ export default function ComposePage() {
   }
 
   const isScheduleDisabled = submitting || loadingSenders || senders.length === 0;
+  const totalRecipientsCount = getCombinedRecipients(to, importedEmails).length;
 
   return (
     <DashboardLayout activeNav="compose">
@@ -232,8 +320,8 @@ export default function ComposePage() {
               <input
                 id="compose-to"
                 className={`compose-field-input${fieldErrors.to ? ' invalid' : ''}`}
-                type="email"
-                placeholder="Recipient email address"
+                type="text"
+                placeholder="Recipient email or leave blank if importing a file"
                 value={to}
                 onChange={e => {
                   setTo(e.target.value);
@@ -247,6 +335,58 @@ export default function ComposePage() {
               />
               {fieldErrors.to && (
                 <span className="compose-inline-error">{fieldErrors.to}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Import CSV/TXT */}
+          <div className="compose-upload-row">
+            <label className="compose-field-label">Import</label>
+            <div className="compose-upload-control">
+              <div className="compose-file-picker">
+                <input
+                  id="compose-file-input"
+                  type="file"
+                  accept=".csv,.txt,text/csv,text/plain"
+                  className="compose-file-hidden"
+                  onChange={handleFileUpload}
+                  disabled={submitting}
+                />
+                <label htmlFor="compose-file-input" className="compose-upload-btn">
+                  <UploadIcon />
+                  <span>Choose CSV or TXT file</span>
+                </label>
+
+                {fileName && (
+                  <div className="compose-file-info">
+                    <span className="compose-file-name">{fileName}</span>
+                    {importedEmails.length > 0 ? (
+                      <span className="compose-file-badge success">
+                        ✓ {importedEmails.length} {importedEmails.length === 1 ? 'email' : 'emails'} detected
+                      </span>
+                    ) : (
+                      <span className="compose-file-badge warning">
+                        No valid emails detected
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      className="compose-file-remove"
+                      onClick={handleRemoveFile}
+                      title="Remove imported file"
+                      disabled={submitting}
+                      aria-label="Remove imported file"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {totalRecipientsCount > 1 && (
+                <div className="compose-recipient-summary">
+                  Total recipients: <strong>{totalRecipientsCount}</strong> unique addresses
+                </div>
               )}
             </div>
           </div>
@@ -404,6 +544,17 @@ function CalendarIcon() {
       <line x1="16" y1="2" x2="16" y2="6" />
       <line x1="8" y1="2" x2="8" y2="6" />
       <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="17 8 12 3 7 8" />
+      <line x1="12" y1="3" x2="12" y2="15" />
     </svg>
   );
 }

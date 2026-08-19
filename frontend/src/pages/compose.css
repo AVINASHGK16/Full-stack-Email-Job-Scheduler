@@ -169,6 +169,115 @@
   border-radius: 6px;
 }
 
+/* ── File Upload Row (Recipients Import) ───────────────────── */
+.compose-upload-row {
+  display: flex;
+  align-items: flex-start;
+  border-bottom: 1px solid #f0f2f5;
+  padding: 12px 0;
+}
+
+.compose-upload-control {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 20px 0 8px;
+}
+
+.compose-file-picker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.compose-file-hidden {
+  display: none;
+}
+
+.compose-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+
+.compose-upload-btn:hover {
+  background-color: #e5e7eb;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
+.compose-file-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.compose-file-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.compose-file-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.compose-file-badge.success {
+  background-color: #eaf8ef;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.compose-file-badge.warning {
+  background-color: #fefce8;
+  color: #854d0e;
+  border: 1px solid #fef08a;
+}
+
+.compose-file-remove {
+  background: none;
+  border: none;
+  font-size: 0.8125rem;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: color 0.15s ease;
+}
+
+.compose-file-remove:hover {
+  color: #dc2626;
+}
+
+.compose-recipient-summary {
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.compose-recipient-summary strong {
+  color: #111827;
+}
+
 /* ── Message area ─────────────────────────────────────────── */
 
 .compose-message-wrapper {
