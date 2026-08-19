@@ -1,20 +1,31 @@
 import { prisma } from './index';
 import nodemailer from 'nodemailer';
+import bcrypt from 'bcryptjs';
 import { env } from '../config/env';
 
 async function main() {
+  if (env.NODE_ENV === 'production' && !process.env.ALLOW_PRODUCTION_SEED) {
+    console.error('⛔ Refusing to run development seed script in production (set ALLOW_PRODUCTION_SEED=1 to override).');
+    process.exit(1);
+  }
+
   console.log('🌱 Seeding development database...');
+
+  const devPasswordHash = await bcrypt.hash('password123', 10);
 
   // 1. Create or get development User
   const user = await prisma.user.upsert({
     where: { email: 'dev-user@example.com' },
-    update: {},
+    update: {
+      passwordHash: devPasswordHash,
+    },
     create: {
       email: 'dev-user@example.com',
       name: 'Development User',
+      passwordHash: devPasswordHash,
     },
   });
-  console.log(`👤 Development User: ID = ${user.id}, Email = ${user.email}`);
+  console.log(`👤 Development User: ID = ${user.id}, Email = ${user.email} (Password: password123)`);
 
   // 2. Determine SMTP credentials
   let smtpUser = env.SMTP_USER;

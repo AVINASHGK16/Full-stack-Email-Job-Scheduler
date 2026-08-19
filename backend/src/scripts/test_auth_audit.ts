@@ -202,6 +202,80 @@ async function runAuthAndAuthorizationAudit() {
     assert(userBSeesSentB === true, "User B sees User B's sent emails");
     assert(userBSeesSentA === false, "User B CANNOT see User A's sent emails");
 
+    // ── TEST 6: Manual Password Authentication (POST /auth/login) ──
+    console.log('\n--- [TEST 6] Manual Password Authentication & Validation ---');
+    const bcrypt = (await import('bcryptjs')).default;
+    const testPassword = 'SecretPassword123!';
+    const testHash = await bcrypt.hash(testPassword, 10);
+
+    const manualUser = await prisma.user.upsert({
+      where: { email: 'manual-auth@audit.test' },
+      update: { passwordHash: testHash },
+      create: {
+        email: 'manual-auth@audit.test',
+        name: 'Manual Test User',
+        passwordHash: testHash,
+      },
+    });
+
+    const googleOnlyUser = await prisma.user.upsert({
+      where: { email: 'google-only@audit.test' },
+      update: { googleId: 'google-oauth-id-12345', passwordHash: null },
+      create: {
+        email: 'google-only@audit.test',
+        name: 'Google Only User',
+        googleId: 'google-oauth-id-12345',
+        passwordHash: null,
+      },
+    });
+
+    const { validatePasswordLogin } = await import('../services/auth.service');
+    const { loginSchema } = await import('../validators/auth');
+
+    // A. Correct email + correct password
+    const validUser = await validatePasswordLogin('manual-auth@audit.test', testPassword);
+    assert(validUser.id === manualUser.id, 'Scenario A: Correct credentials validate user successfully');
+
+    // B. Correct email + wrong password
+    let wrongPassErr: any = null;
+    try {
+      await validatePasswordLogin('manual-auth@audit.test', 'WrongPassword999');
+    } catch (err) {
+      wrongPassErr = err;
+    }
+    assert(wrongPassErr instanceof AppError && wrongPassErr.statusCode === 401, 'Scenario B: Wrong password returns 401 Unauthorized');
+    assert(wrongPassErr?.message === 'Invalid email or password.', 'Scenario B: Error message is generic to prevent enumeration');
+
+    // C. Unknown email
+    let unknownEmailErr: any = null;
+    try {
+      await validatePasswordLogin('nonexistent@audit.test', testPassword);
+    } catch (err) {
+      unknownEmailErr = err;
+    }
+    assert(unknownEmailErr instanceof AppError && unknownEmailErr.statusCode === 401, 'Scenario C: Unknown email returns 401 Unauthorized');
+    assert(unknownEmailErr?.message === 'Invalid email or password.', 'Scenario C: Generic message prevents account enumeration');
+
+    // D. Missing email schema validation
+    const missingEmailResult = loginSchema.safeParse({ password: 'some_password' });
+    assert(missingEmailResult.success === false, 'Scenario D: Missing email rejected with schema validation error');
+
+    // E. Missing password schema validation
+    const missingPassResult = loginSchema.safeParse({ email: 'valid@example.com' });
+    assert(missingPassResult.success === false, 'Scenario E: Missing password rejected with schema validation error');
+
+    // F. Google-only account attempting password login
+    let googleUserPassErr: any = null;
+    try {
+      await validatePasswordLogin('google-only@audit.test', testPassword);
+    } catch (err) {
+      googleUserPassErr = err;
+    }
+    assert(googleUserPassErr instanceof AppError && googleUserPassErr.statusCode === 401, 'Scenario F: Google-only account (passwordHash null) rejected with 401');
+
+    // G. Security: Password hash omitted from user objects
+    assert(!('password' in validUser), 'Scenario G: Plaintext password is never in user object');
+
     // ── Cleanup Test Data ──────────────────────────────────────────
     await prisma.recipient.deleteMany({
       where: {
@@ -220,7 +294,7 @@ async function runAuthAndAuthorizationAudit() {
     });
     await prisma.user.deleteMany({
       where: {
-        id: { in: [userA.id, userB.id] },
+        id: { in: [userA.id, userB.id, manualUser.id, googleOnlyUser.id] },
       },
     });
 

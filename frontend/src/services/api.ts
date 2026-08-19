@@ -72,6 +72,40 @@ export async function getMe(): Promise<AuthUser> {
 }
 
 /**
+ * POST /auth/login
+ *
+ * Manual email + password authentication.
+ * Resolves on 200 with AuthUser; rejects with ApiError otherwise.
+ */
+export async function loginWithCredentials(credentials: { email: string; password: string }): Promise<AuthUser> {
+  const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(credentials),
+  });
+
+  if (res.ok) {
+    const body = (await res.json()) as GetMeResponse;
+    return body.data;
+  }
+
+  let errBody: ApiErrorResponse | null = null;
+  try {
+    errBody = (await res.json()) as ApiErrorResponse;
+  } catch {
+    // non-JSON error body — fall through
+  }
+
+  throw new ApiError(
+    errBody?.message ?? 'Invalid email or password.',
+    res.status
+  );
+}
+
+/**
  * POST /auth/logout
  *
  * Destroys the server-side session and clears the session cookie.

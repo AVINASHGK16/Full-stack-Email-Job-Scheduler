@@ -1,10 +1,18 @@
 import { Router } from 'express';
 import passport from '../config/passport';
 import { requireAuth } from '../middleware/auth';
-import { getMe, logout, oauthFailure } from '../controllers/auth.controller';
+import { getMe, login, logout, oauthFailure } from '../controllers/auth.controller';
 import { env } from '../config/env';
 
 const authRouter = Router();
+
+/**
+ * POST /auth/login
+ *
+ * Manual email + password authentication.
+ * Validates credentials, hashes with bcrypt, and establishes a session.
+ */
+authRouter.post('/login', login);
 
 /**
  * GET /auth/google

@@ -11,15 +11,16 @@ datasource db {
 }
 
 model User {
-  id        String     @id @default(uuid())
-  googleId  String?    @unique
-  name      String?
-  email     String     @unique
-  avatarUrl String?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  senders   Sender[]
-  campaigns Campaign[]
+  id           String     @id @default(uuid())
+  googleId     String?    @unique
+  name         String?
+  email        String     @unique
+  passwordHash String?
+  avatarUrl    String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  senders      Sender[]
+  campaigns    Campaign[]
 
   @@map("users")
 }

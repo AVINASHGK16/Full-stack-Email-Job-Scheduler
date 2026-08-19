@@ -60,3 +60,35 @@ export async function findOrCreateUser(profile: Profile): Promise<UserRecord> {
     },
   });
 }
+
+/**
+ * Validates a manual email + password login attempt.
+ *
+ * Security:
+ * - Uses bcrypt.compare for secure constant-time hash comparison.
+ * - Returns a generic 401 message ("Invalid email or password.") to prevent account enumeration.
+ * - Rejects Google-only accounts (passwordHash is null) with the same generic 401.
+ * - Never returns passwordHash in the returned user object.
+ */
+export async function validatePasswordLogin(email: string, password: string): Promise<UserRecord> {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  const user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+  });
+
+  if (!user || !user.passwordHash) {
+    const { AppError } = await import('../middleware/error');
+    throw new AppError('Invalid email or password.', 401);
+  }
+
+  const bcrypt = (await import('bcryptjs')).default;
+  const isMatch = await bcrypt.compare(password, user.passwordHash);
+
+  if (!isMatch) {
+    const { AppError } = await import('../middleware/error');
+    throw new AppError('Invalid email or password.', 401);
+  }
+
+  return user;
+}

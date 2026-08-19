@@ -1,4 +1,38 @@
 import { Request, Response, NextFunction } from 'express';
+import { validatePasswordLogin } from '../services/auth.service';
+import { loginSchema } from '../validators/auth';
+
+/**
+ * POST /auth/login
+ *
+ * Authenticates user via email + password and establishes a session.
+ * Uses the same Passport/express-session mechanism as Google OAuth.
+ */
+export async function login(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const validated = loginSchema.parse(req.body);
+    const user = await validatePasswordLogin(validated.email, validated.password);
+
+    req.login(user, (err) => {
+      if (err) {
+        return next(err);
+      }
+
+      res.status(200).json({
+        status: 'success',
+        data: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          avatarUrl: user.avatarUrl,
+          createdAt: user.createdAt,
+        },
+      });
+    });
+  } catch (err) {
+    next(err);
+  }
+}
 
 /**
  * GET /auth/me
