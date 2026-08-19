@@ -14,5 +14,8 @@
   "workspaces": [
     "frontend",
     "backend"
-  ]
+  ],
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  }
 }
