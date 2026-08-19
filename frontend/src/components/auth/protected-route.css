@@ -1,0 +1,23 @@
+/* ProtectedRoute — minimal full-screen loading state */
+
+.protected-route-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #ffffff;
+}
+
+.protected-route-spinner {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #2d6a2d;
+  border-radius: 50%;
+  animation: pr-spin 0.7s linear infinite;
+}
+
+@keyframes pr-spin {
+  to { transform: rotate(360deg); }
+}
