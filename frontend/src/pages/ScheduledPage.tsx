@@ -1,30 +1,67 @@
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../layouts/DashboardLayout';
 import EmailRow from '../components/dashboard/EmailRow';
+import { getScheduledEmails } from '../services/api';
+import type { ScheduledEmailItem } from '../types/campaign';
 
 /**
  * ScheduledPage — /scheduled
  *
- * Displays the Scheduled emails list inside the Dashboard shell.
- * Uses static representative placeholder data for Phase 9.4.
+ * Displays the list of scheduled emails fetched from GET /campaigns/scheduled.
+ * Shows loading, error, empty, and populated states using the existing EmailRow component.
  */
 export default function ScheduledPage() {
+  const [emails, setEmails] = useState<ScheduledEmailItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getScheduledEmails()
+      .then(data => {
+        if (!cancelled) {
+          setEmails(data);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load scheduled emails');
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <DashboardLayout activeNav="scheduled">
       <div className="email-list">
-        <EmailRow
-          recipient="John Smith"
-          status="Scheduled"
-          badgeType="scheduled"
-          subject="Meeting follow-up"
-          preview="Hi John, just wanted to follow up on our meeting..."
-        />
-        <EmailRow
-          recipient="Olive"
-          status="Scheduled"
-          badgeType="scheduled"
-          subject="Ramit, great to meet you - you'll love it"
-          preview="Hi Olive, just wanted to follow up on our meeting..."
-        />
+        {loading && (
+          <div className="email-list-status">Loading scheduled emails...</div>
+        )}
+
+        {!loading && error && (
+          <div className="email-list-error">{error}</div>
+        )}
+
+        {!loading && !error && emails.length === 0 && (
+          <div className="email-list-empty">No scheduled emails.</div>
+        )}
+
+        {!loading && !error && emails.map(item => (
+          <EmailRow
+            key={item.id}
+            recipient={item.email}
+            status="Scheduled"
+            badgeType="scheduled"
+            subject={item.subject}
+            preview={item.bodyPreview}
+          />
+        ))}
       </div>
     </DashboardLayout>
   );

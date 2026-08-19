@@ -100,3 +100,24 @@ export interface ApiErrorResponse {
   message: string;
   errors?: unknown;
 }
+
+/* ── GET /campaigns/scheduled ────────────────────────────────────────────── */
+
+export interface ScheduledEmailItem {
+  id: string;
+  email: string;
+  status: RecipientStatus;
+  scheduledAt: string;
+  jobId: string | null;
+  campaignId: string;
+  campaignStatus: CampaignStatus;
+  subject: string;
+  bodyPreview: string;
+  startTime: string;
+}
+
+export interface GetScheduledEmailsResponse {
+  status: 'success';
+  data: ScheduledEmailItem[];
+}
+

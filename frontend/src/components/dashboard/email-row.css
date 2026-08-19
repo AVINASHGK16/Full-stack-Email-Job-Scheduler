@@ -6,6 +6,20 @@
   background-color: #ffffff;
 }
 
+.email-list-status,
+.email-list-empty,
+.email-list-error {
+  padding: 32px 28px;
+  font-size: 0.9375rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+.email-list-error {
+  color: #dc2626;
+}
+
+
 .email-row {
   display: flex;
   align-items: center;

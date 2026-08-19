@@ -11,6 +11,8 @@ import type {
   ScheduleCampaignRequest,
   ScheduleCampaignResponse,
   ApiErrorResponse,
+  ScheduledEmailItem,
+  GetScheduledEmailsResponse,
 } from '../types/campaign';
 import type { AuthUser, GetMeResponse } from '../types/auth';
 
@@ -113,6 +115,35 @@ export async function scheduleCampaign(
     `Request failed with status ${res.status}`;
 
   throw new ApiError(message, res.status);
+}
+
+/**
+ * GET /campaigns/scheduled
+ *
+ * Fetches all scheduled (PENDING or QUEUED) recipients belonging to the
+ * authenticated user.
+ */
+export async function getScheduledEmails(): Promise<ScheduledEmailItem[]> {
+  const res = await fetch(`${API_BASE_URL}/campaigns/scheduled`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  if (res.ok) {
+    const body = (await res.json()) as GetScheduledEmailsResponse;
+    return body.data;
+  }
+
+  let errBody: ApiErrorResponse | null = null;
+  try {
+    errBody = (await res.json()) as ApiErrorResponse;
+  } catch {
+    // non-JSON error body — fall through
+  }
+  throw new ApiError(
+    errBody?.message ?? `Request failed with status ${res.status}`,
+    res.status
+  );
 }
 
 /* ── Error class ─────────────────────────────────────────────────────────── */
