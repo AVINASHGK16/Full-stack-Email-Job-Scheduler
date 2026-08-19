@@ -1,11 +1,16 @@
 import './dashboard-header.css';
 
+interface DashboardHeaderProps {
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
+}
+
 /**
  * DashboardHeader — search bar + filter/refresh icon buttons.
  *
- * Visual only in Phase 9.3. No filtering or refresh logic yet.
+ * Supports onRefresh callback and isRefreshing state for the active dashboard page.
  */
-export default function DashboardHeader() {
+export default function DashboardHeader({ onRefresh, isRefreshing }: DashboardHeaderProps) {
   return (
     <header className="dashboard-header">
 
@@ -33,12 +38,13 @@ export default function DashboardHeader() {
 
       {/* Refresh */}
       <button
-        className="header-icon-btn"
+        className={`header-icon-btn${isRefreshing ? ' refreshing' : ''}`}
         type="button"
         aria-label="Refresh"
-        disabled
+        onClick={onRefresh}
+        disabled={!onRefresh || isRefreshing}
       >
-        <RefreshIcon />
+        <RefreshIcon className={isRefreshing ? 'spin' : ''} />
       </button>
 
     </header>
@@ -68,9 +74,9 @@ function FilterIcon() {
   );
 }
 
-function RefreshIcon() {
+function RefreshIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
       <path d="M21 3v5h-5" />

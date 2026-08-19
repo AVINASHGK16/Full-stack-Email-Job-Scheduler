@@ -7,21 +7,30 @@ interface DashboardLayoutProps {
   children: ReactNode;
   /** Which nav item is currently active: 'scheduled' | 'sent' | 'compose' */
   activeNav: 'scheduled' | 'sent' | 'compose';
+  /** Optional refresh callback provided by the active dashboard page */
+  onRefresh?: () => void;
+  /** Optional indicator whether the active page is currently refreshing */
+  isRefreshing?: boolean;
 }
 
 /**
  * DashboardLayout — shared shell for Scheduled, Sent, and Compose pages.
  *
  * Renders the sidebar + header and places page content in the
- * scrollable main area. Static placeholder data only in Phase 9.3.
+ * scrollable main area.
  */
-export default function DashboardLayout({ children, activeNav }: DashboardLayoutProps) {
+export default function DashboardLayout({
+  children,
+  activeNav,
+  onRefresh,
+  isRefreshing,
+}: DashboardLayoutProps) {
   return (
     <div className="dashboard-layout">
       <Sidebar activeNav={activeNav} />
 
       <div className="dashboard-main">
-        <DashboardHeader />
+        <DashboardHeader onRefresh={onRefresh} isRefreshing={isRefreshing} />
         <div className="dashboard-content">
           {children}
         </div>
