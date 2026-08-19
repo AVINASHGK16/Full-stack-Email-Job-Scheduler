@@ -5,17 +5,14 @@ import type { AuthUser } from '../../types/auth';
 import './sidebar.css';
 
 interface SidebarProps {
-  activeNav: 'scheduled' | 'sent' | 'compose';
+  activeNav: 'scheduled' | 'sent' | 'compose' | 'senders';
 }
 
 /**
  * Sidebar — left navigation panel.
  *
- * Phase 9.7: Fetches the real authenticated user from GET /auth/me on mount.
- * Falls back to initials "?" and empty strings while loading or if unauthenticated.
- * Logout button calls POST /auth/logout and navigates to /login.
- *
- * Visual layout is unchanged from Phase 9.4.
+ * Fetches the real authenticated user from GET /auth/me on mount.
+ * Provides navigation links to Scheduled, Sent, and Senders, plus Compose button.
  */
 export default function Sidebar({ activeNav }: SidebarProps) {
   const navigate = useNavigate();
@@ -105,6 +102,14 @@ export default function Sidebar({ activeNav }: SidebarProps) {
           <span className="sidebar-nav-count">785</span>
         </Link>
 
+        <Link
+          to="/senders"
+          className={`sidebar-nav-item${activeNav === 'senders' ? ' active' : ''}`}
+        >
+          <SendersIcon className="sidebar-nav-icon" />
+          <span className="sidebar-nav-label">Senders</span>
+        </Link>
+
       </nav>
     </aside>
   );
@@ -161,6 +166,18 @@ function PaperPlaneIcon({ className }: { className?: string }) {
       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="m22 2-7 20-4-9-9-4Z" />
       <path d="M22 2 11 13" />
+    </svg>
+  );
+}
+
+function SendersIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
   );
 }

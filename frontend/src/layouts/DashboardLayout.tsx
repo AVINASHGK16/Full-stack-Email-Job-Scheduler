@@ -5,8 +5,8 @@ import './dashboard-layout.css';
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  /** Which nav item is currently active: 'scheduled' | 'sent' | 'compose' */
-  activeNav: 'scheduled' | 'sent' | 'compose';
+  /** Which nav item is currently active: 'scheduled' | 'sent' | 'compose' | 'senders' */
+  activeNav: 'scheduled' | 'sent' | 'compose' | 'senders';
   /** Optional refresh callback provided by the active dashboard page */
   onRefresh?: () => void;
   /** Optional indicator whether the active page is currently refreshing */
@@ -14,7 +14,7 @@ interface DashboardLayoutProps {
 }
 
 /**
- * DashboardLayout — shared shell for Scheduled, Sent, and Compose pages.
+ * DashboardLayout — shared shell for Scheduled, Sent, Compose, and Senders pages.
  *
  * Renders the sidebar + header and places page content in the
  * scrollable main area.

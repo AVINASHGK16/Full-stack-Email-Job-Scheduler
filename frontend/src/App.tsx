@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage';
 import ScheduledPage from './pages/ScheduledPage';
 import SentPage from './pages/SentPage';
 import ComposePage from './pages/ComposePage';
+import SendersPage from './pages/SendersPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 /**
@@ -14,9 +15,10 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
  * Routes:
  *   /           → HomePage     (public)
  *   /login      → LoginPage    (public — Google OAuth entry point)
- *   /scheduled  → ScheduledPage  ← Protected (Phase 9.8)
- *   /sent       → SentPage       ← Protected (Phase 9.8)
- *   /compose    → ComposePage    ← Protected (Phase 9.8)
+ *   /scheduled  → ScheduledPage  ← Protected
+ *   /sent       → SentPage       ← Protected
+ *   /compose    → ComposePage    ← Protected
+ *   /senders    → SendersPage    ← Protected (Phase 9.18)
  *
  * ProtectedRoute calls GET /auth/me on every mount.
  * Unauthenticated sessions are redirected to /login.
@@ -29,7 +31,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
 
-        {/* ── Protected dashboard routes (Phase 9.8) ── */}
+        {/* ── Protected dashboard routes ── */}
         <Route
           path="/scheduled"
           element={
@@ -51,6 +53,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ComposePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/senders"
+          element={
+            <ProtectedRoute>
+              <SendersPage />
             </ProtectedRoute>
           }
         />
