@@ -1,4 +1,6 @@
 import { prisma } from '../db';
+import { AppError } from '../middleware/error';
+import type { CreateSenderPayload } from '../validators/sender';
 
 export class SenderService {
   /**
@@ -33,5 +35,50 @@ export class SenderService {
       email: s.email,
       createdAt: s.createdAt,
     }));
+  }
+
+  /**
+   * Creates a new sender record associated with the authenticated user.
+   *
+   * Security & Data Isolation:
+   * - Associates record with userId from authenticated session.
+   * - Checks for duplicate senders belonging to the same user.
+   * - Explicitly selects only safe fields to return (`id`, `email`, `createdAt`).
+   * - Never returns or logs `smtpPassword`.
+   *
+   * @param userId - The authenticated user's ID from req.user.id.
+   * @param payload - Validated sender creation data.
+   */
+  public static async createSender(userId: string, payload: CreateSenderPayload) {
+    const normalizedEmail = payload.email.trim().toLowerCase();
+
+    // Check for existing sender with the same email for this user
+    const existing = await prisma.sender.findFirst({
+      where: {
+        userId,
+        email: normalizedEmail,
+      },
+    });
+
+    if (existing) {
+      throw new AppError('A sender with this email address already exists.', 409);
+    }
+
+    // Create the Sender record in database
+    const sender = await prisma.sender.create({
+      data: {
+        userId,
+        email: normalizedEmail,
+        smtpUser: payload.smtpUser.trim(),
+        smtpPassword: payload.smtpPassword,
+      },
+      select: {
+        id: true,
+        email: true,
+        createdAt: true,
+      },
+    });
+
+    return sender;
   }
 }
