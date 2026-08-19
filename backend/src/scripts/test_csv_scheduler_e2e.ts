@@ -138,7 +138,7 @@ alex@gmail.com
     });
 
     assert(dbRecipients.length === 3, `3 Recipient records saved in PostgreSQL (actual=${dbRecipients.length})`);
-    assert(dbRecipients.every(r => r.status === 'QUEUED'), 'All 3 recipients have status QUEUED');
+    assert(dbRecipients.every((r: { status: string }) => r.status === 'QUEUED'), 'All 3 recipients have status QUEUED');
 
     // Verify BullMQ Jobs in Redis
     for (const rec of dbRecipients) {
@@ -151,7 +151,7 @@ alex@gmail.com
     // Verify Scheduled API returns all 3
     const scheduledList = await CampaignService.getScheduled(user.id);
     const campaignRecipientsInScheduled = scheduledList.filter(
-      r => r.campaignId === campaignResult.campaign.id
+      (r: { campaignId: string }) => r.campaignId === campaignResult.campaign.id
     );
     assert(
       campaignRecipientsInScheduled.length === 3,

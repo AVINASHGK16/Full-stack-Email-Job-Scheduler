@@ -130,8 +130,8 @@ async function runAuthAndAuthorizationAudit() {
     // ── TEST 1: User A Cannot Access User B Senders ───────────────
     console.log('\n--- [TEST 1] Senders Read Data Isolation ---');
     const sendersForUserA = await SenderService.getSenders(userA.id);
-    const hasSenderA = sendersForUserA.some(s => s.id === senderA.id);
-    const hasSenderB = sendersForUserA.some(s => s.id === senderB.id);
+    const hasSenderA = sendersForUserA.some((s: { id: string }) => s.id === senderA.id);
+    const hasSenderB = sendersForUserA.some((s: { id: string }) => s.id === senderB.id);
 
     assert(hasSenderA === true, "User A's query returns User A's sender");
     assert(hasSenderB === false, "User A's query DOES NOT contain User B's sender (Data Isolation Confirmed)");
@@ -177,10 +177,10 @@ async function runAuthAndAuthorizationAudit() {
     const scheduledForUserA = await CampaignService.getScheduled(userA.id);
     const scheduledForUserB = await CampaignService.getScheduled(userB.id);
 
-    const userASeesAlpha = scheduledForUserA.some(r => r.email === 'alpha-recipient@audit.test');
-    const userASeesBeta = scheduledForUserA.some(r => r.email === 'beta-recipient@audit.test');
-    const userBSeesBeta = scheduledForUserB.some(r => r.email === 'beta-recipient@audit.test');
-    const userBSeesAlpha = scheduledForUserB.some(r => r.email === 'alpha-recipient@audit.test');
+    const userASeesAlpha = scheduledForUserA.some((r: { email: string }) => r.email === 'alpha-recipient@audit.test');
+    const userASeesBeta = scheduledForUserA.some((r: { email: string }) => r.email === 'beta-recipient@audit.test');
+    const userBSeesBeta = scheduledForUserB.some((r: { email: string }) => r.email === 'beta-recipient@audit.test');
+    const userBSeesAlpha = scheduledForUserB.some((r: { email: string }) => r.email === 'alpha-recipient@audit.test');
 
     assert(userASeesAlpha === true, "User A sees User A's scheduled emails");
     assert(userASeesBeta === false, "User A CANNOT see User B's scheduled emails");
@@ -192,10 +192,10 @@ async function runAuthAndAuthorizationAudit() {
     const sentForUserA = await CampaignService.getSent(userA.id);
     const sentForUserB = await CampaignService.getSent(userB.id);
 
-    const userASeesSentA = sentForUserA.some(r => r.email === 'alpha-sent@audit.test');
-    const userASeesSentB = sentForUserA.some(r => r.email === 'beta-sent@audit.test');
-    const userBSeesSentB = sentForUserB.some(r => r.email === 'beta-sent@audit.test');
-    const userBSeesSentA = sentForUserB.some(r => r.email === 'alpha-sent@audit.test');
+    const userASeesSentA = sentForUserA.some((r: { email: string }) => r.email === 'alpha-sent@audit.test');
+    const userASeesSentB = sentForUserA.some((r: { email: string }) => r.email === 'beta-sent@audit.test');
+    const userBSeesSentB = sentForUserB.some((r: { email: string }) => r.email === 'beta-sent@audit.test');
+    const userBSeesSentA = sentForUserB.some((r: { email: string }) => r.email === 'alpha-sent@audit.test');
 
     assert(userASeesSentA === true, "User A sees User A's sent emails");
     assert(userASeesSentB === false, "User A CANNOT see User B's sent emails");
