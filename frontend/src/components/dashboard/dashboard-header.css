@@ -65,9 +65,20 @@
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.header-icon-btn:hover {
+.header-icon-btn:hover:not(:disabled) {
   background-color: #f9fafb;
   border-color: #d1d5db;
+}
+
+.header-icon-btn.active {
+  background-color: #e5e7eb;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
+.header-icon-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .header-icon-btn svg {

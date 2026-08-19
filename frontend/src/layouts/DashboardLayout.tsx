@@ -11,6 +11,10 @@ interface DashboardLayoutProps {
   onRefresh?: () => void;
   /** Optional indicator whether the active page is currently refreshing */
   isRefreshing?: boolean;
+  /** Optional filter toggle callback provided by the active dashboard page */
+  onFilter?: () => void;
+  /** Optional indicator whether filtering is currently active */
+  isFiltered?: boolean;
 }
 
 /**
@@ -24,13 +28,20 @@ export default function DashboardLayout({
   activeNav,
   onRefresh,
   isRefreshing,
+  onFilter,
+  isFiltered,
 }: DashboardLayoutProps) {
   return (
     <div className="dashboard-layout">
       <Sidebar activeNav={activeNav} />
 
       <div className="dashboard-main">
-        <DashboardHeader onRefresh={onRefresh} isRefreshing={isRefreshing} />
+        <DashboardHeader
+          onRefresh={onRefresh}
+          isRefreshing={isRefreshing}
+          onFilter={onFilter}
+          isFiltered={isFiltered}
+        />
         <div className="dashboard-content">
           {children}
         </div>

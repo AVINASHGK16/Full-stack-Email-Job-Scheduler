@@ -3,14 +3,21 @@ import './dashboard-header.css';
 interface DashboardHeaderProps {
   onRefresh?: () => void;
   isRefreshing?: boolean;
+  onFilter?: () => void;
+  isFiltered?: boolean;
 }
 
 /**
  * DashboardHeader — search bar + filter/refresh icon buttons.
  *
- * Supports onRefresh callback and isRefreshing state for the active dashboard page.
+ * Supports onRefresh callback, isRefreshing state, onFilter callback, and isFiltered state.
  */
-export default function DashboardHeader({ onRefresh, isRefreshing }: DashboardHeaderProps) {
+export default function DashboardHeader({
+  onRefresh,
+  isRefreshing,
+  onFilter,
+  isFiltered,
+}: DashboardHeaderProps) {
   return (
     <header className="dashboard-header">
 
@@ -28,10 +35,11 @@ export default function DashboardHeader({ onRefresh, isRefreshing }: DashboardHe
 
       {/* Filter */}
       <button
-        className="header-icon-btn"
+        className={`header-icon-btn${isFiltered ? ' active' : ''}`}
         type="button"
         aria-label="Filter"
-        disabled
+        onClick={onFilter}
+        disabled={!onFilter}
       >
         <FilterIcon />
       </button>
