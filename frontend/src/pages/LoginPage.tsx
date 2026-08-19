@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import GoogleIcon from '../components/GoogleIcon';
 import { API_BASE_URL } from '../services/api';
 import './login.css';
@@ -16,6 +17,18 @@ import './login.css';
  * exists). The Login button remains disabled — this is correct behaviour.
  */
 export default function LoginPage() {
+  const [searchParams] = useSearchParams();
+  const errorParam = searchParams.get('error');
+
+  let errorMessage: string | null = null;
+  if (errorParam === 'oauth_failed') {
+    errorMessage = 'Google authentication failed or was cancelled. Please try again.';
+  } else if (errorParam === 'unauthorized') {
+    errorMessage = 'Your session has expired. Please log in again.';
+  } else if (errorParam) {
+    errorMessage = 'Authentication error. Please try logging in again.';
+  }
+
   /**
    * Navigate the browser to the backend Google OAuth entry point.
    * This is a full-page navigation (not fetch) — the browser must follow
@@ -34,6 +47,12 @@ export default function LoginPage() {
       <div className="login-card">
 
         <h1 className="login-heading">Login</h1>
+
+        {errorMessage && (
+          <div className="login-error-banner" role="alert">
+            {errorMessage}
+          </div>
+        )}
 
         {/* Google OAuth button — wired to backend in Phase 9.7 */}
         <button
