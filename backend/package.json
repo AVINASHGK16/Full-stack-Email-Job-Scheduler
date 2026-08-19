@@ -7,7 +7,7 @@
   "dev": "tsx watch src/index.ts",
   "dev:api": "tsx watch src/index.ts",
   "dev:worker": "tsx watch src/workers/index.ts",
-  "build": "prisma generate && tsc",
+  "build": "npm install --no-package-lock && npx prisma generate && tsc",
   "start": "node dist/index.js",
   "start:api": "node dist/index.js",
   "start:worker": "node dist/workers/index.js",
