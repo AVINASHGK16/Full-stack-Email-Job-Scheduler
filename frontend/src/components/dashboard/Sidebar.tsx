@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getMe, logoutUser } from '../../services/api';
+import { getMe, logoutUser, getScheduledEmails, getSentEmails } from '../../services/api';
 import type { AuthUser } from '../../types/auth';
 import './sidebar.css';
 
@@ -12,13 +12,16 @@ interface SidebarProps {
  * Sidebar — left navigation panel.
  *
  * Fetches the real authenticated user from GET /auth/me on mount.
+ * Fetches live Scheduled and Sent counts from GET /campaigns/scheduled and GET /campaigns/sent.
  * Provides navigation links to Scheduled, Sent, and Senders, plus Compose button.
  */
 export default function Sidebar({ activeNav }: SidebarProps) {
   const navigate = useNavigate();
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [scheduledCount, setScheduledCount] = useState<number | null>(null);
+  const [sentCount, setSentCount] = useState<number | null>(null);
 
-  /* ── Fetch authenticated user on mount ── */
+  /* ── Fetch authenticated user & live counts on mount / navigation ── */
   useEffect(() => {
     getMe()
       .then(setUser)
@@ -26,7 +29,15 @@ export default function Sidebar({ activeNav }: SidebarProps) {
         // 401 = unauthenticated, or backend unreachable.
         // Leave user as null — fallback UI is shown.
       });
-  }, []);
+
+    getScheduledEmails()
+      .then(data => setScheduledCount(data.length))
+      .catch(() => setScheduledCount(null));
+
+    getSentEmails()
+      .then(data => setSentCount(data.length))
+      .catch(() => setSentCount(null));
+  }, [activeNav]);
 
   /* ── Logout handler ── */
   async function handleLogout() {
@@ -90,7 +101,9 @@ export default function Sidebar({ activeNav }: SidebarProps) {
         >
           <ClockIcon className="sidebar-nav-icon" />
           <span className="sidebar-nav-label">Scheduled</span>
-          <span className="sidebar-nav-count">12</span>
+          {scheduledCount !== null && (
+            <span className="sidebar-nav-count">{scheduledCount}</span>
+          )}
         </Link>
 
         <Link
@@ -99,7 +112,9 @@ export default function Sidebar({ activeNav }: SidebarProps) {
         >
           <PaperPlaneIcon className="sidebar-nav-icon" />
           <span className="sidebar-nav-label">Sent</span>
-          <span className="sidebar-nav-count">785</span>
+          {sentCount !== null && (
+            <span className="sidebar-nav-count">{sentCount}</span>
+          )}
         </Link>
 
         <Link
