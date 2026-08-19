@@ -1,33 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
-import { scheduleCampaign, ApiError } from '../services/api';
+import { scheduleCampaign, getSenders, ApiError } from '../services/api';
+import type { SenderItem } from '../types/sender';
 import './compose.css';
-
-/**
- * SENDER_ID — The development seed sender UUID.
- *
- * The backend seed (backend/src/db/seed.ts) always creates:
- *   id: '00000000-0000-0000-0000-000000000000'
- *
- * POST /campaigns requires a valid senderId. Phase 9.6 hardcodes this seeded
- * value because the Compose UI has no sender-selection control. A later phase
- * will add proper sender management.
- */
-const SENDER_ID = '00000000-0000-0000-0000-000000000000';
 
 /**
  * ComposePage — /compose
  *
- * Phase 9.6: form fields are controlled state. On submit, calls POST /campaigns
- * via the api service. Navigates to /scheduled on success (201 or 207).
- * Displays an inline error on failure — including a login hint on 401.
- *
- * No backend files were modified for this page.
- * No new dependencies were installed.
+ * Form fields are controlled state. Fetches the authenticated user's senders
+ * from GET /senders on mount, populating the "From" selector.
+ * On submit, calls POST /campaigns with the selected sender ID.
+ * Navigates to /scheduled on success (201 or 207).
+ * Displays an inline error on failure.
  */
 export default function ComposePage() {
   const navigate = useNavigate();
+
+  /* ── Sender state ── */
+  const [senders, setSenders] = useState<SenderItem[]>([]);
+  const [loadingSenders, setLoadingSenders] = useState<boolean>(true);
+  const [selectedSenderId, setSelectedSenderId] = useState<string>('');
 
   /* ── Form state ── */
   const [to, setTo]           = useState('john@example.com');
@@ -42,9 +35,56 @@ export default function ComposePage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]           = useState<string | null>(null);
 
+  /* ── Fetch Senders on Mount ── */
+  useEffect(() => {
+    let cancelled = false;
+
+    getSenders()
+      .then(data => {
+        if (!cancelled) {
+          setSenders(data);
+          if (data.length > 0) {
+            setSelectedSenderId(data[0].id);
+          }
+          setLoadingSenders(false);
+        }
+      })
+      .catch(err => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load sender accounts');
+          setLoadingSenders(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   /* ── Submit handler ── */
   async function handleSubmit() {
     setError(null);
+
+    if (!selectedSenderId) {
+      setError('Please select a sender email address.');
+      return;
+    }
+
+    if (!to.trim()) {
+      setError('Recipient email address is required.');
+      return;
+    }
+
+    if (!subject.trim()) {
+      setError('Email subject is required.');
+      return;
+    }
+
+    if (!message.trim()) {
+      setError('Email message body is required.');
+      return;
+    }
+
     setSubmitting(true);
 
     // Combine date + time into an ISO timestamp the backend accepts.
@@ -53,7 +93,7 @@ export default function ComposePage() {
 
     try {
       await scheduleCampaign({
-        senderId:     SENDER_ID,
+        senderId:     selectedSenderId,
         subject:      subject.trim(),
         body:         message.trim(),
         startTime,
@@ -82,6 +122,8 @@ export default function ComposePage() {
     }
   }
 
+  const isScheduleDisabled = submitting || loadingSenders || senders.length === 0;
+
   return (
     <DashboardLayout activeNav="compose">
       <div className="compose-content">
@@ -103,6 +145,31 @@ export default function ComposePage() {
 
         {/* ── Compose form card ── */}
         <div className="compose-form">
+
+          {/* From (Sender) */}
+          <div className="compose-field-row">
+            <label className="compose-field-label" htmlFor="compose-sender">From</label>
+            {loadingSenders ? (
+              <div className="compose-field-loading">Loading senders...</div>
+            ) : senders.length === 0 ? (
+              <div className="compose-field-warning">No configured senders found.</div>
+            ) : (
+              <select
+                id="compose-sender"
+                className="compose-field-select"
+                value={selectedSenderId}
+                onChange={e => setSelectedSenderId(e.target.value)}
+                aria-label="Sender email address"
+                disabled={submitting}
+              >
+                {senders.map(sender => (
+                  <option key={sender.id} value={sender.id}>
+                    {sender.email}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
 
           {/* To */}
           <div className="compose-field-row">
@@ -191,7 +258,7 @@ export default function ComposePage() {
               type="button"
               className="compose-btn-primary"
               onClick={handleSubmit}
-              disabled={submitting}
+              disabled={isScheduleDisabled}
               aria-label={submitting ? 'Scheduling…' : 'Schedule email'}
             >
               <CalendarIcon />

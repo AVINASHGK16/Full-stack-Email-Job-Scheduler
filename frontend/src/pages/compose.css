@@ -103,6 +103,38 @@
   color: #9ca3af;
 }
 
+.compose-field-select {
+  flex: 1;
+  padding: 14px 20px 14px 8px;
+  border: none;
+  outline: none;
+  font-size: 0.9375rem;
+  color: #111827;
+  background-color: transparent;
+  font-family: inherit;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.compose-field-select:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.compose-field-loading,
+.compose-field-warning {
+  flex: 1;
+  padding: 14px 20px 14px 8px;
+  font-size: 0.9375rem;
+  color: #6b7280;
+  box-sizing: border-box;
+}
+
+.compose-field-warning {
+  color: #dc2626;
+}
+
+
 /* ── Message area ─────────────────────────────────────────── */
 .compose-message-wrapper {
   display: flex;
