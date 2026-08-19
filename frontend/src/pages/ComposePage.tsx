@@ -127,6 +127,16 @@ function getDefaultScheduleDate(): string {
 }
 
 /**
+ * Returns a default schedule time (1 hour in the future) formatted as HH:MM.
+ */
+function getDefaultScheduleTime(): string {
+  const future = new Date(Date.now() + 60 * 60 * 1000);
+  const hours = String(future.getHours()).padStart(2, '0');
+  const minutes = String(future.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
+/**
  * ComposePage — /compose
  *
  * Form fields are controlled state. Fetches the authenticated user's senders
@@ -147,7 +157,7 @@ export default function ComposePage() {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [date, setDate]       = useState(getDefaultScheduleDate);
-  const [time, setTime]       = useState('09:00');
+  const [time, setTime]       = useState(getDefaultScheduleTime);
 
   /* ── File Import state ── */
   const [importedEmails, setImportedEmails] = useState<string[]>([]);
