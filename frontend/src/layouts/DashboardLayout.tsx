@@ -15,6 +15,10 @@ interface DashboardLayoutProps {
   onFilter?: () => void;
   /** Optional indicator whether filtering is currently active */
   isFiltered?: boolean;
+  /** Optional search query for filtering emails */
+  searchQuery?: string;
+  /** Optional search query change handler */
+  onSearchChange?: (query: string) => void;
 }
 
 /**
@@ -30,6 +34,8 @@ export default function DashboardLayout({
   isRefreshing,
   onFilter,
   isFiltered,
+  searchQuery,
+  onSearchChange,
 }: DashboardLayoutProps) {
   return (
     <div className="dashboard-layout">
@@ -41,6 +47,8 @@ export default function DashboardLayout({
           isRefreshing={isRefreshing}
           onFilter={onFilter}
           isFiltered={isFiltered}
+          searchQuery={searchQuery}
+          onSearchChange={onSearchChange}
         />
         <div className="dashboard-content">
           {children}

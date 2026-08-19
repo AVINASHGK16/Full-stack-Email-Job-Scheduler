@@ -5,18 +5,22 @@ interface DashboardHeaderProps {
   isRefreshing?: boolean;
   onFilter?: () => void;
   isFiltered?: boolean;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
 }
 
 /**
  * DashboardHeader — search bar + filter/refresh icon buttons.
  *
- * Supports onRefresh callback, isRefreshing state, onFilter callback, and isFiltered state.
+ * Supports client-side search, onRefresh callback, isRefreshing state, onFilter callback, and isFiltered state.
  */
 export default function DashboardHeader({
   onRefresh,
   isRefreshing,
   onFilter,
   isFiltered,
+  searchQuery,
+  onSearchChange,
 }: DashboardHeaderProps) {
   return (
     <header className="dashboard-header">
@@ -29,7 +33,8 @@ export default function DashboardHeader({
           type="search"
           placeholder="Search"
           aria-label="Search emails"
-          readOnly
+          value={searchQuery ?? ''}
+          onChange={(e) => onSearchChange?.(e.target.value)}
         />
       </div>
 

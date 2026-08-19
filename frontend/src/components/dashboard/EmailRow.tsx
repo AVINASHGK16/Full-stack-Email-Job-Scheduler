@@ -1,24 +1,30 @@
 import './email-row.css';
 
 export interface EmailRowProps {
+  id: string;
   recipient: string;
   status: string;
   badgeType: 'scheduled' | 'sent';
   subject: string;
   preview: string;
+  isStarred?: boolean;
+  onToggleStar?: (id: string) => void;
 }
 
 /**
  * EmailRow — visual component for an individual email row in Scheduled & Sent lists.
  *
- * Used for static placeholder rendering in Phase 9.4.
+ * Supports star/bookmark toggle.
  */
 export default function EmailRow({
+  id,
   recipient,
   status,
   badgeType,
   subject,
   preview,
+  isStarred = false,
+  onToggleStar,
 }: EmailRowProps) {
   return (
     <div className="email-row">
@@ -35,24 +41,28 @@ export default function EmailRow({
 
       <button
         type="button"
-        className="email-row-star"
-        aria-label="Star email"
-        disabled
+        className={`email-row-star${isStarred ? ' active' : ''}`}
+        aria-label={isStarred ? 'Unstar email' : 'Star email'}
+        aria-pressed={isStarred}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleStar?.(id);
+        }}
       >
-        <StarIcon />
+        <StarIcon filled={isStarred} />
       </button>
     </div>
   );
 }
 
-function StarIcon() {
+function StarIcon({ filled }: { filled?: boolean }) {
   return (
     <svg
       width="18"
       height="18"
       viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
+      fill={filled ? '#f59e0b' : 'none'}
+      stroke={filled ? '#f59e0b' : 'currentColor'}
       strokeWidth="1.75"
       strokeLinecap="round"
       strokeLinejoin="round"

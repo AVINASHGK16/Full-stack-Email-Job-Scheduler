@@ -118,7 +118,8 @@
   margin-left: 8px;
 }
 
-.email-row-star:hover {
+.email-row-star:hover,
+.email-row-star.active {
   color: #f59e0b;
 }
 
