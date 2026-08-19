@@ -131,5 +131,59 @@ class CampaignService {
             ...(queueFailures.length > 0 && { failures: queueFailures }),
         };
     }
+    /**
+     * Returns all scheduled (PENDING or QUEUED) recipients belonging to the
+     * authenticated user, ordered by scheduledAt ascending.
+     *
+     * Data isolation: the WHERE clause filters by campaign.userId, so a user
+     * can never see another user's records — even if they guess a recipient ID.
+     *
+     * Read-only: no DB mutations, no queue interactions.
+     *
+     * @param userId - The authenticated user's ID from req.user.id.
+     */
+    static async getScheduled(userId) {
+        const recipients = await db_1.prisma.recipient.findMany({
+            where: {
+                // Status filter: only recipients that have not yet been sent or failed
+                status: { in: ['PENDING', 'QUEUED'] },
+                // Data-isolation: join through campaign to enforce user ownership
+                campaign: { userId },
+            },
+            select: {
+                id: true,
+                email: true,
+                status: true,
+                scheduledAt: true,
+                jobId: true,
+                campaign: {
+                    select: {
+                        id: true,
+                        subject: true,
+                        // Return the first 200 characters of the body as a preview.
+                        // The full body is not needed by the list UI.
+                        body: true,
+                        status: true,
+                        startTime: true,
+                    },
+                },
+            },
+            orderBy: { scheduledAt: 'asc' },
+        });
+        // Shape the response: flatten campaign fields and add a truncated preview
+        return recipients.map((r) => ({
+            id: r.id,
+            email: r.email,
+            status: r.status,
+            scheduledAt: r.scheduledAt,
+            jobId: r.jobId,
+            campaignId: r.campaign.id,
+            campaignStatus: r.campaign.status,
+            subject: r.campaign.subject,
+            // Trim body to 200 chars for the dashboard preview snippet
+            bodyPreview: r.campaign.body.slice(0, 200),
+            startTime: r.campaign.startTime,
+        }));
+    }
 }
 exports.CampaignService = CampaignService;

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createCampaign = void 0;
+exports.getScheduledCampaigns = exports.createCampaign = void 0;
 const campaign_1 = require("../validators/campaign");
 const campaign_service_1 = require("../services/campaign.service");
 /**
@@ -46,3 +46,30 @@ const createCampaign = async (req, res, next) => {
     }
 };
 exports.createCampaign = createCampaign;
+/**
+ * Controller to handle GET /campaigns/scheduled requests.
+ *
+ * Authentication boundary (identical to createCampaign):
+ *  - req.user is guaranteed to be populated by requireAuth.
+ *  - userId is extracted exclusively from req.user.id.
+ *  - No userId is accepted from query parameters or the URL.
+ *
+ * Returns only recipients whose parent campaign belongs to the
+ * authenticated user. Another user's data is never included.
+ *
+ * Read-only: no mutations occur.
+ */
+const getScheduledCampaigns = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const scheduled = await campaign_service_1.CampaignService.getScheduled(userId);
+        res.status(200).json({
+            status: 'success',
+            data: scheduled,
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+};
+exports.getScheduledCampaigns = getScheduledCampaigns;
