@@ -38,15 +38,155 @@
   align-items: center;
   gap: 8px;
   padding: 10px 18px;
+  background-color: #2d6a2d;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: background-color 0.15s ease;
+}
+
+.btn-add-sender:hover {
+  background-color: #245924;
+}
+
+.btn-add-sender:disabled {
   background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* ── Senders Creation Card & Form ─────────────────────────── */
+.sender-create-card {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-sizing: border-box;
+}
+
+.sender-create-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 18px;
+}
+
+.sender-create-error-banner {
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #991b1b;
+  line-height: 1.4;
+}
+
+.sender-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.sender-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sender-form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.sender-form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.sender-form-input {
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  color: #111827;
+  background-color: #ffffff;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.sender-form-input:focus {
+  border-color: #4ade80;
+}
+
+.sender-form-input.invalid {
+  border-color: #ef4444;
+}
+
+.sender-form-error {
+  font-size: 0.8125rem;
+  color: #dc2626;
+  margin-top: 2px;
+}
+
+.sender-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.btn-create-cancel {
+  padding: 9px 18px;
+  background: none;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #9ca3af;
-  cursor: not-allowed;
+  color: #374151;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
   font-family: inherit;
-  white-space: nowrap;
+}
+
+.btn-create-cancel:hover {
+  background-color: #f3f4f6;
+}
+
+.btn-create-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  background-color: #2d6a2d;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  font-family: inherit;
+}
+
+.btn-create-submit:hover {
+  background-color: #245924;
+}
+
+.btn-create-submit:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
 }
 
 /* ── Senders Card & List ──────────────────────────────────── */
@@ -128,5 +268,9 @@
   .btn-add-sender {
     width: 100%;
     justify-content: center;
+  }
+
+  .sender-form-grid {
+    grid-template-columns: 1fr;
   }
 }

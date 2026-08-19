@@ -17,7 +17,12 @@ import type {
   GetSentEmailsResponse,
 } from '../types/campaign';
 import type { AuthUser, GetMeResponse } from '../types/auth';
-import type { SenderItem, GetSendersResponse } from '../types/sender';
+import type {
+  SenderItem,
+  GetSendersResponse,
+  CreateSenderRequest,
+  CreateSenderResponse,
+} from '../types/sender';
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000';
@@ -119,6 +124,41 @@ export async function getSenders(): Promise<SenderItem[]> {
   } catch {
     // non-JSON error body — fall through
   }
+  throw new ApiError(
+    errBody?.message ?? `Request failed with status ${res.status}`,
+    res.status
+  );
+}
+
+/**
+ * POST /senders
+ *
+ * Creates a new sender record for the authenticated user.
+ */
+export async function createSender(
+  payload: CreateSenderRequest
+): Promise<SenderItem> {
+  const res = await fetch(`${API_BASE_URL}/senders`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (res.ok) {
+    const body = (await res.json()) as CreateSenderResponse;
+    return body.data;
+  }
+
+  handleAuthFailure(res.status);
+
+  let errBody: ApiErrorResponse | null = null;
+  try {
+    errBody = (await res.json()) as ApiErrorResponse;
+  } catch {
+    // non-JSON error body — fall through
+  }
+
   throw new ApiError(
     errBody?.message ?? `Request failed with status ${res.status}`,
     res.status
