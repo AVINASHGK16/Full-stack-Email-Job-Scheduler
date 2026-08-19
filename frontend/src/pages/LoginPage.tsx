@@ -32,14 +32,12 @@ export default function LoginPage() {
           type="email"
           placeholder="Email ID"
           autoComplete="email"
-          readOnly
         />
         <input
           className="login-input"
           type="password"
           placeholder="Password"
           autoComplete="current-password"
-          readOnly
         />
 
         {/* Login button — visual only, no handler yet */}
