@@ -4,10 +4,14 @@
  * Derived from GET /senders, POST /senders, and POST /senders/:id/verify backend responses.
  */
 
+export type SenderVerificationStatus = 'PENDING' | 'VERIFIED' | 'FAILED';
+
 export interface SenderItem {
   id: string;
   email: string;
   createdAt: string;
+  verificationStatus: SenderVerificationStatus;
+  verifiedAt: string | null;
 }
 
 export interface GetSendersResponse {

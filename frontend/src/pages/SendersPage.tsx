@@ -12,17 +12,12 @@ interface FormErrors {
   smtpPassword?: string;
 }
 
-interface VerificationResult {
-  verified?: boolean;
-  error?: string;
-}
-
 /**
  * SendersPage — /senders
  *
  * Displays the authenticated user's configured email senders fetched from GET /senders.
- * Supports adding a new sender account via POST /senders with client-side validation.
- * Supports verifying SMTP connectivity for any sender via POST /senders/:id/verify.
+ * Reflects persisted verification status (PENDING, VERIFIED, FAILED) and verified timestamp from database.
+ * Supports adding new senders and testing SMTP connectivity with automatic persisted state refresh.
  */
 export default function SendersPage() {
   const [senders, setSenders] = useState<SenderItem[]>([]);
@@ -41,11 +36,10 @@ export default function SendersPage() {
   const [submitting, setSubmitting]         = useState<boolean>(false);
   const [createError, setCreateError]       = useState<string | null>(null);
 
-  /* ── Verification State ── */
-  const [verifyingId, setVerifyingId]                 = useState<string | null>(null);
-  const [verificationStatus, setVerificationStatus]   = useState<Record<string, VerificationResult>>({});
+  /* ── Verification In-Flight State ── */
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
-  /* ── Fetch Senders ── */
+  /* ── Fetch Senders (source of truth from DB) ── */
   const fetchSenders = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -153,27 +147,17 @@ export default function SendersPage() {
 
   /* ── Handle SMTP Verification ── */
   async function handleVerify(senderId: string) {
-    if (verifyingId) return; // Prevent concurrent verifications
+    if (verifyingId) return; // Prevent duplicate concurrent verification
 
     setVerifyingId(senderId);
-    setVerificationStatus(prev => ({
-      ...prev,
-      [senderId]: {},
-    }));
 
     try {
-      const result = await verifySender(senderId);
-      setVerificationStatus(prev => ({
-        ...prev,
-        [senderId]: { verified: result.verified },
-      }));
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'SMTP verification failed';
-      setVerificationStatus(prev => ({
-        ...prev,
-        [senderId]: { error: errorMsg },
-      }));
+      await verifySender(senderId);
+    } catch {
+      // Backend automatically updates DB state to FAILED on verification error
     } finally {
+      // Refresh persisted state from server
+      await fetchSenders();
       setVerifyingId(null);
     }
   }
@@ -377,7 +361,6 @@ export default function SendersPage() {
           {!loading && !error && senders.length > 0 && (
             <div className="senders-list">
               {senders.map(sender => {
-                const status = verificationStatus[sender.id];
                 const isVerifying = verifyingId === sender.id;
 
                 return (
@@ -391,22 +374,30 @@ export default function SendersPage() {
                           month: 'short',
                           day: 'numeric',
                         })}
+                        {sender.verificationStatus === 'VERIFIED' && sender.verifiedAt && (
+                          <>
+                            {' • '}Verified on{' '}
+                            {new Date(sender.verifiedAt).toLocaleDateString(undefined, {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </>
+                        )}
                       </span>
                     </div>
 
                     <div className="sender-actions">
-                      {status?.verified && (
+                      {sender.verificationStatus === 'VERIFIED' && (
                         <span className="sender-badge verified">✓ SMTP verified</span>
                       )}
 
-                      {status?.error && (
-                        <span className="sender-badge failed" title={status.error}>
-                          SMTP failed
-                        </span>
+                      {sender.verificationStatus === 'FAILED' && (
+                        <span className="sender-badge failed">✕ Verification failed</span>
                       )}
 
-                      {!status?.verified && !status?.error && (
-                        <span className="sender-badge">Active</span>
+                      {sender.verificationStatus === 'PENDING' && (
+                        <span className="sender-badge pending">○ Not verified</span>
                       )}
 
                       <button

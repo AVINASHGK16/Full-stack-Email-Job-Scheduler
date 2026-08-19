@@ -25,15 +25,17 @@ model User {
 }
 
 model Sender {
-  id           String     @id @default(uuid())
-  userId       String
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  email        String
-  smtpUser     String
-  smtpPassword String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  campaigns    Campaign[]
+  id                 String                   @id @default(uuid())
+  userId             String
+  user               User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email              String
+  smtpUser           String
+  smtpPassword       String
+  verificationStatus SenderVerificationStatus @default(PENDING)
+  verifiedAt         DateTime?
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  campaigns          Campaign[]
 
   @@index([userId])
   @@map("senders")
@@ -80,6 +82,12 @@ model Recipient {
   @@index([status])
   @@index([scheduledAt])
   @@map("recipients")
+}
+
+enum SenderVerificationStatus {
+  PENDING
+  VERIFIED
+  FAILED
 }
 
 enum CampaignStatus {
