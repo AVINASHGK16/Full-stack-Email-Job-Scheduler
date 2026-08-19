@@ -270,8 +270,31 @@
 }
 
 .compose-recipient-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
   font-size: 0.8125rem;
-  color: #6b7280;
+  color: #4b5563;
+  margin-top: 4px;
+}
+
+.compose-recipient-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.compose-recipient-pill.total {
+  background-color: #f0fdf4;
+  color: #15803d;
+  border-color: #bbf7d0;
 }
 
 .compose-recipient-summary strong {

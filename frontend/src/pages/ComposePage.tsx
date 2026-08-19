@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { scheduleCampaign, getSenders, ApiError } from '../services/api';
@@ -38,31 +38,80 @@ function extractEmailsFromText(text: string): string[] {
 }
 
 /**
- * Combines manual recipient input and imported recipient list, deduplicating them.
+ * Parses manual recipient string, separating valid emails and identifying invalid tokens.
+ * Supports comma, semicolon, space, or newline delimiters.
  */
-function getCombinedRecipients(manualTo: string, imported: string[]): string[] {
-  const seen = new Set<string>();
-  const combined: string[] = [];
+function parseManualRecipients(raw: string): {
+  validEmails: string[];
+  invalidTokens: string[];
+  uniqueValidEmails: string[];
+} {
+  const trimmedRaw = raw.trim();
+  if (!trimmedRaw) {
+    return { validEmails: [], invalidTokens: [], uniqueValidEmails: [] };
+  }
 
-  const trimmedManual = manualTo.trim();
-  if (trimmedManual) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (emailRegex.test(trimmedManual)) {
-      seen.add(trimmedManual.toLowerCase());
-      combined.push(trimmedManual);
+  const tokens = trimmedRaw
+    .split(/[,;\s\n\r]+/)
+    .map(t => t.trim())
+    .filter(Boolean);
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const validEmails: string[] = [];
+  const invalidTokens: string[] = [];
+  const seen = new Set<string>();
+  const uniqueValidEmails: string[] = [];
+
+  for (const token of tokens) {
+    if (emailRegex.test(token)) {
+      validEmails.push(token);
+      const lower = token.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        uniqueValidEmails.push(token);
+      }
+    } else {
+      invalidTokens.push(token);
     }
   }
 
+  return { validEmails, invalidTokens, uniqueValidEmails };
+}
+
+/**
+ * Combines and deduplicates manual recipients and imported file recipients.
+ */
+function getUnifiedRecipientSummary(manualRaw: string, imported: string[]) {
+  const { validEmails: manualValid, invalidTokens: manualInvalid, uniqueValidEmails: manualUnique } =
+    parseManualRecipients(manualRaw);
+
+  const seen = new Set<string>();
+  const finalRecipients: string[] = [];
+
+  // Add manual unique emails first
+  for (const email of manualUnique) {
+    seen.add(email.toLowerCase());
+    finalRecipients.push(email);
+  }
+
+  // Add imported emails if not already present
   for (const email of imported) {
     const trimmed = email.trim();
     const lower = trimmed.toLowerCase();
     if (trimmed && !seen.has(lower)) {
       seen.add(lower);
-      combined.push(trimmed);
+      finalRecipients.push(trimmed);
     }
   }
 
-  return combined;
+  return {
+    manualValidCount: manualValid.length,
+    manualUniqueCount: manualUnique.length,
+    manualInvalid,
+    importedCount: imported.length,
+    totalUniqueCount: finalRecipients.length,
+    finalRecipients,
+  };
 }
 
 /**
@@ -70,7 +119,7 @@ function getCombinedRecipients(manualTo: string, imported: string[]): string[] {
  *
  * Form fields are controlled state. Fetches the authenticated user's senders
  * from GET /senders on mount, populating the "From" selector.
- * Supports manual single recipient entry and CSV/TXT file import with client-side deduplication.
+ * Supports multiple manual recipients (comma/newline/space separated) and CSV/TXT file import.
  * Performs client-side validation before calling POST /campaigns.
  * Navigates to /scheduled on success (201 or 207).
  */
@@ -99,6 +148,11 @@ export default function ComposePage() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting]   = useState(false);
   const [apiError, setApiError]       = useState<string | null>(null);
+
+  /* ── Computed Unified Recipient Summary ── */
+  const recipientSummary = useMemo(() => {
+    return getUnifiedRecipientSummary(to, importedEmails);
+  }, [to, importedEmails]);
 
   /* ── Fetch Senders on Mount ── */
   useEffect(() => {
@@ -162,16 +216,13 @@ export default function ComposePage() {
       errors.sender = 'Please select a sender email address.';
     }
 
-    const trimmedTo = to.trim();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (trimmedTo && !emailRegex.test(trimmedTo)) {
-      errors.to = 'Please enter a valid email address (e.g. name@example.com).';
-    }
-
-    const combinedRecipients = getCombinedRecipients(to, importedEmails);
-    if (combinedRecipients.length === 0) {
-      errors.to = 'Recipient email is required (enter an address or upload a CSV/TXT file).';
+    // Check for invalid manual email tokens
+    if (recipientSummary.manualInvalid.length > 0) {
+      const invalidList = recipientSummary.manualInvalid.slice(0, 3).join(', ');
+      const extra = recipientSummary.manualInvalid.length > 3 ? '...' : '';
+      errors.to = `Invalid email address${recipientSummary.manualInvalid.length > 1 ? 'es' : ''}: ${invalidList}${extra}`;
+    } else if (recipientSummary.totalUniqueCount === 0) {
+      errors.to = 'At least one valid recipient is required (enter emails or upload a CSV/TXT file).';
     }
 
     if (!subject.trim()) {
@@ -214,7 +265,7 @@ export default function ComposePage() {
     const isValid = validateForm();
     if (!isValid) return;
 
-    const finalRecipients = getCombinedRecipients(to, importedEmails);
+    const { finalRecipients } = recipientSummary;
     if (finalRecipients.length === 0) return;
 
     setSubmitting(true);
@@ -253,7 +304,6 @@ export default function ComposePage() {
   }
 
   const isScheduleDisabled = submitting || loadingSenders || senders.length === 0;
-  const totalRecipientsCount = getCombinedRecipients(to, importedEmails).length;
 
   return (
     <DashboardLayout activeNav="compose">
@@ -313,7 +363,7 @@ export default function ComposePage() {
             </div>
           </div>
 
-          {/* To */}
+          {/* To (Manual Multiple Recipients) */}
           <div className="compose-field-row">
             <label className="compose-field-label" htmlFor="compose-to">To</label>
             <div className="compose-field-control">
@@ -321,7 +371,7 @@ export default function ComposePage() {
                 id="compose-to"
                 className={`compose-field-input${fieldErrors.to ? ' invalid' : ''}`}
                 type="text"
-                placeholder="Recipient email or leave blank if importing a file"
+                placeholder="e.g. user1@example.com, user2@example.com or import file"
                 value={to}
                 onChange={e => {
                   setTo(e.target.value);
@@ -329,7 +379,7 @@ export default function ComposePage() {
                     setFieldErrors(prev => ({ ...prev, to: undefined }));
                   }
                 }}
-                aria-label="Recipient email address"
+                aria-label="Recipient email addresses"
                 aria-invalid={!!fieldErrors.to}
                 disabled={submitting}
               />
@@ -362,7 +412,7 @@ export default function ComposePage() {
                     <span className="compose-file-name">{fileName}</span>
                     {importedEmails.length > 0 ? (
                       <span className="compose-file-badge success">
-                        ✓ {importedEmails.length} {importedEmails.length === 1 ? 'email' : 'emails'} detected
+                        ✓ {importedEmails.length} {importedEmails.length === 1 ? 'email' : 'emails'} imported
                       </span>
                     ) : (
                       <span className="compose-file-badge warning">
@@ -383,9 +433,22 @@ export default function ComposePage() {
                 )}
               </div>
 
-              {totalRecipientsCount > 1 && (
+              {/* Recipient Count Breakdown & Summary */}
+              {recipientSummary.totalUniqueCount > 0 && (
                 <div className="compose-recipient-summary">
-                  Total recipients: <strong>{totalRecipientsCount}</strong> unique addresses
+                  {recipientSummary.manualUniqueCount > 0 && (
+                    <span className="compose-recipient-pill">
+                      {recipientSummary.manualUniqueCount} manual
+                    </span>
+                  )}
+                  {recipientSummary.importedCount > 0 && (
+                    <span className="compose-recipient-pill">
+                      {recipientSummary.importedCount} imported
+                    </span>
+                  )}
+                  <span className="compose-recipient-pill total">
+                    {recipientSummary.totalUniqueCount} total unique {recipientSummary.totalUniqueCount === 1 ? 'recipient' : 'recipients'}
+                  </span>
                 </div>
               )}
             </div>
