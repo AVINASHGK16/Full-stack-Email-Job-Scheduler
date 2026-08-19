@@ -185,5 +185,55 @@ class CampaignService {
             startTime: r.campaign.startTime,
         }));
     }
+    /**
+     * Returns all sent (status === 'SENT') recipients belonging to the
+     * authenticated user, ordered by scheduledAt descending.
+     *
+     * Data isolation: the WHERE clause filters by campaign.userId, so a user
+     * can never see another user's records — even if they guess a recipient ID.
+     *
+     * Read-only: no DB mutations, no queue interactions.
+     *
+     * @param userId - The authenticated user's ID from req.user.id.
+     */
+    static async getSent(userId) {
+        const recipients = await db_1.prisma.recipient.findMany({
+            where: {
+                status: 'SENT',
+                campaign: { userId },
+            },
+            select: {
+                id: true,
+                email: true,
+                status: true,
+                scheduledAt: true,
+                jobId: true,
+                campaign: {
+                    select: {
+                        id: true,
+                        subject: true,
+                        body: true,
+                        status: true,
+                        startTime: true,
+                    },
+                },
+            },
+            orderBy: { scheduledAt: 'desc' },
+        });
+        // Shape the response: flatten campaign fields and add a truncated preview
+        return recipients.map((r) => ({
+            id: r.id,
+            email: r.email,
+            status: r.status,
+            scheduledAt: r.scheduledAt,
+            jobId: r.jobId,
+            campaignId: r.campaign.id,
+            campaignStatus: r.campaign.status,
+            subject: r.campaign.subject,
+            // Trim body to 200 chars for the dashboard preview snippet
+            bodyPreview: r.campaign.body.slice(0, 200),
+            startTime: r.campaign.startTime,
+        }));
+    }
 }
 exports.CampaignService = CampaignService;

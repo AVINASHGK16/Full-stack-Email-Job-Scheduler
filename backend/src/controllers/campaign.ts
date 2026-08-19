@@ -80,3 +80,36 @@ export const getScheduledCampaigns = async (
   }
 };
 
+/**
+ * Controller to handle GET /campaigns/sent requests.
+ *
+ * Authentication boundary (identical to getScheduledCampaigns):
+ *  - req.user is guaranteed to be populated by requireAuth.
+ *  - userId is extracted exclusively from req.user.id.
+ *  - No userId is accepted from query parameters or the URL.
+ *
+ * Returns only recipients with status 'SENT' whose parent campaign belongs to the
+ * authenticated user. Another user's data is never included.
+ *
+ * Read-only: no mutations occur.
+ */
+export const getSentCampaigns = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+
+    const sent = await CampaignService.getSent(userId);
+
+    res.status(200).json({
+      status: 'success',
+      data: sent,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+

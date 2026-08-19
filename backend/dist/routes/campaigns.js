@@ -10,4 +10,7 @@ router.post('/', auth_1.requireAuth, campaign_1.createCampaign);
 // GET /campaigns/scheduled — read-only list of pending/queued recipients.
 // requireAuth enforces the session; returns only the authenticated user's records.
 router.get('/scheduled', auth_1.requireAuth, campaign_1.getScheduledCampaigns);
+// GET /campaigns/sent — read-only list of sent recipients.
+// requireAuth enforces the session; returns only the authenticated user's records.
+router.get('/sent', auth_1.requireAuth, campaign_1.getSentCampaigns);
 exports.default = router;

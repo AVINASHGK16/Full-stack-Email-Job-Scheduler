@@ -1,5 +1,9 @@
 import { Router } from 'express';
-import { createCampaign, getScheduledCampaigns } from '../controllers/campaign';
+import {
+  createCampaign,
+  getScheduledCampaigns,
+  getSentCampaigns,
+} from '../controllers/campaign';
 import { requireAuth } from '../middleware/auth';
 
 const router = Router();
@@ -11,5 +15,9 @@ router.post('/', requireAuth, createCampaign);
 // GET /campaigns/scheduled — read-only list of pending/queued recipients.
 // requireAuth enforces the session; returns only the authenticated user's records.
 router.get('/scheduled', requireAuth, getScheduledCampaigns);
+
+// GET /campaigns/sent — read-only list of sent recipients.
+// requireAuth enforces the session; returns only the authenticated user's records.
+router.get('/sent', requireAuth, getSentCampaigns);
 
 export default router;

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getScheduledCampaigns = exports.createCampaign = void 0;
+exports.getSentCampaigns = exports.getScheduledCampaigns = exports.createCampaign = void 0;
 const campaign_1 = require("../validators/campaign");
 const campaign_service_1 = require("../services/campaign.service");
 /**
@@ -73,3 +73,30 @@ const getScheduledCampaigns = async (req, res, next) => {
     }
 };
 exports.getScheduledCampaigns = getScheduledCampaigns;
+/**
+ * Controller to handle GET /campaigns/sent requests.
+ *
+ * Authentication boundary (identical to getScheduledCampaigns):
+ *  - req.user is guaranteed to be populated by requireAuth.
+ *  - userId is extracted exclusively from req.user.id.
+ *  - No userId is accepted from query parameters or the URL.
+ *
+ * Returns only recipients with status 'SENT' whose parent campaign belongs to the
+ * authenticated user. Another user's data is never included.
+ *
+ * Read-only: no mutations occur.
+ */
+const getSentCampaigns = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const sent = await campaign_service_1.CampaignService.getSent(userId);
+        res.status(200).json({
+            status: 'success',
+            data: sent,
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+};
+exports.getSentCampaigns = getSentCampaigns;
