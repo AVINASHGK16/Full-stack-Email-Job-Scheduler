@@ -5,14 +5,24 @@ import { scheduleCampaign, getSenders, ApiError } from '../services/api';
 import type { SenderItem } from '../types/sender';
 import './compose.css';
 
+interface FieldErrors {
+  sender?: string;
+  to?: string;
+  subject?: string;
+  message?: string;
+  date?: string;
+  time?: string;
+  schedule?: string;
+}
+
 /**
  * ComposePage — /compose
  *
  * Form fields are controlled state. Fetches the authenticated user's senders
  * from GET /senders on mount, populating the "From" selector.
- * On submit, calls POST /campaigns with the selected sender ID.
+ * Performs client-side validation before calling POST /campaigns.
  * Navigates to /scheduled on success (201 or 207).
- * Displays an inline error on failure.
+ * Displays field-level and API errors inline.
  */
 export default function ComposePage() {
   const navigate = useNavigate();
@@ -31,9 +41,10 @@ export default function ComposePage() {
   const [date, setDate]       = useState('2026-08-25');
   const [time, setTime]       = useState('09:00');
 
-  /* ── Submit state ── */
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError]           = useState<string | null>(null);
+  /* ── Validation & Submission state ── */
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [submitting, setSubmitting]   = useState(false);
+  const [apiError, setApiError]       = useState<string | null>(null);
 
   /* ── Fetch Senders on Mount ── */
   useEffect(() => {
@@ -51,7 +62,7 @@ export default function ComposePage() {
       })
       .catch(err => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load sender accounts');
+          setApiError(err instanceof Error ? err.message : 'Failed to load sender accounts');
           setLoadingSenders(false);
         }
       });
@@ -61,34 +72,66 @@ export default function ComposePage() {
     };
   }, []);
 
-  /* ── Submit handler ── */
-  async function handleSubmit() {
-    setError(null);
+  /* ── Client-side form validation ── */
+  function validateForm(): boolean {
+    const errors: FieldErrors = {};
 
     if (!selectedSenderId) {
-      setError('Please select a sender email address.');
-      return;
+      errors.sender = 'Please select a sender email address.';
     }
 
-    if (!to.trim()) {
-      setError('Recipient email address is required.');
-      return;
+    const trimmedTo = to.trim();
+    if (!trimmedTo) {
+      errors.to = 'Recipient email address is required.';
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(trimmedTo)) {
+        errors.to = 'Please enter a valid email address (e.g. name@example.com).';
+      }
     }
 
     if (!subject.trim()) {
-      setError('Email subject is required.');
-      return;
+      errors.subject = 'Email subject is required.';
     }
 
     if (!message.trim()) {
-      setError('Email message body is required.');
-      return;
+      errors.message = 'Email message body is required.';
     }
+
+    if (!date) {
+      errors.date = 'Schedule date is required.';
+    }
+
+    if (!time) {
+      errors.time = 'Schedule time is required.';
+    }
+
+    if (date && time) {
+      const startTimestamp = new Date(`${date}T${time}:00`).getTime();
+      if (isNaN(startTimestamp)) {
+        errors.schedule = 'Invalid schedule date or time format.';
+      } else if (startTimestamp <= Date.now()) {
+        errors.schedule = 'Schedule time must be set to a future date and time.';
+      }
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
+
+  /* ── Submit handler ── */
+  async function handleSubmit() {
+    setApiError(null);
+
+    // Prevent duplicate simultaneous submissions
+    if (submitting) return;
+
+    // Validate form inputs client-side
+    const isValid = validateForm();
+    if (!isValid) return;
 
     setSubmitting(true);
 
-    // Combine date + time into an ISO timestamp the backend accepts.
-    // The backend validates: new Date(startTime).getTime() > Date.now()
     const startTime = new Date(`${date}T${time}:00`).toISOString();
 
     try {
@@ -107,15 +150,15 @@ export default function ComposePage() {
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.statusCode === 401) {
-          setError(
+          setApiError(
             'You must be logged in to schedule an email. ' +
             'Please log in with your Google account first.'
           );
         } else {
-          setError(err.message);
+          setApiError(err.message);
         }
       } else {
-        setError('An unexpected error occurred. Please try again.');
+        setApiError('An unexpected error occurred. Please try again.');
       }
     } finally {
       setSubmitting(false);
@@ -136,10 +179,10 @@ export default function ComposePage() {
           <h1 className="compose-page-title">Compose</h1>
         </div>
 
-        {/* ── Inline error banner ── */}
-        {error && (
+        {/* ── API error banner ── */}
+        {apiError && (
           <div className="compose-error" role="alert">
-            {error}
+            {apiError}
           </div>
         )}
 
@@ -149,54 +192,89 @@ export default function ComposePage() {
           {/* From (Sender) */}
           <div className="compose-field-row">
             <label className="compose-field-label" htmlFor="compose-sender">From</label>
-            {loadingSenders ? (
-              <div className="compose-field-loading">Loading senders...</div>
-            ) : senders.length === 0 ? (
-              <div className="compose-field-warning">No configured senders found.</div>
-            ) : (
-              <select
-                id="compose-sender"
-                className="compose-field-select"
-                value={selectedSenderId}
-                onChange={e => setSelectedSenderId(e.target.value)}
-                aria-label="Sender email address"
-                disabled={submitting}
-              >
-                {senders.map(sender => (
-                  <option key={sender.id} value={sender.id}>
-                    {sender.email}
-                  </option>
-                ))}
-              </select>
-            )}
+            <div className="compose-field-control">
+              {loadingSenders ? (
+                <div className="compose-field-loading">Loading senders...</div>
+              ) : senders.length === 0 ? (
+                <div className="compose-field-warning">No configured senders found.</div>
+              ) : (
+                <select
+                  id="compose-sender"
+                  className={`compose-field-select${fieldErrors.sender ? ' invalid' : ''}`}
+                  value={selectedSenderId}
+                  onChange={e => {
+                    setSelectedSenderId(e.target.value);
+                    if (fieldErrors.sender) {
+                      setFieldErrors(prev => ({ ...prev, sender: undefined }));
+                    }
+                  }}
+                  aria-label="Sender email address"
+                  aria-invalid={!!fieldErrors.sender}
+                  disabled={submitting}
+                >
+                  {senders.map(sender => (
+                    <option key={sender.id} value={sender.id}>
+                      {sender.email}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {fieldErrors.sender && (
+                <span className="compose-inline-error">{fieldErrors.sender}</span>
+              )}
+            </div>
           </div>
 
           {/* To */}
           <div className="compose-field-row">
             <label className="compose-field-label" htmlFor="compose-to">To</label>
-            <input
-              id="compose-to"
-              className="compose-field-input"
-              type="email"
-              placeholder="Recipient email address"
-              value={to}
-              onChange={e => setTo(e.target.value)}
-              aria-label="Recipient email address"
-            />
+            <div className="compose-field-control">
+              <input
+                id="compose-to"
+                className={`compose-field-input${fieldErrors.to ? ' invalid' : ''}`}
+                type="email"
+                placeholder="Recipient email address"
+                value={to}
+                onChange={e => {
+                  setTo(e.target.value);
+                  if (fieldErrors.to) {
+                    setFieldErrors(prev => ({ ...prev, to: undefined }));
+                  }
+                }}
+                aria-label="Recipient email address"
+                aria-invalid={!!fieldErrors.to}
+                disabled={submitting}
+              />
+              {fieldErrors.to && (
+                <span className="compose-inline-error">{fieldErrors.to}</span>
+              )}
+            </div>
           </div>
 
           {/* Subject */}
           <div className="compose-field-row">
             <label className="compose-field-label" htmlFor="compose-subject">Subject</label>
-            <input
-              id="compose-subject"
-              className="compose-field-input"
-              type="text"
-              placeholder="Email subject"
-              value={subject}
-              onChange={e => setSubject(e.target.value)}
-              aria-label="Email subject"
-            />
+            <div className="compose-field-control">
+              <input
+                id="compose-subject"
+                className={`compose-field-input${fieldErrors.subject ? ' invalid' : ''}`}
+                type="text"
+                placeholder="Email subject"
+                value={subject}
+                onChange={e => {
+                  setSubject(e.target.value);
+                  if (fieldErrors.subject) {
+                    setFieldErrors(prev => ({ ...prev, subject: undefined }));
+                  }
+                }}
+                aria-label="Email subject"
+                aria-invalid={!!fieldErrors.subject}
+                disabled={submitting}
+              />
+              {fieldErrors.subject && (
+                <span className="compose-inline-error">{fieldErrors.subject}</span>
+              )}
+            </div>
           </div>
 
           {/* Message */}
@@ -206,12 +284,22 @@ export default function ComposePage() {
             </label>
             <textarea
               id="compose-message"
-              className="compose-message-textarea"
+              className={`compose-message-textarea${fieldErrors.message ? ' invalid' : ''}`}
               placeholder="Write your message here..."
               value={message}
-              onChange={e => setMessage(e.target.value)}
+              onChange={e => {
+                setMessage(e.target.value);
+                if (fieldErrors.message) {
+                  setFieldErrors(prev => ({ ...prev, message: undefined }));
+                }
+              }}
               aria-label="Email message"
+              aria-invalid={!!fieldErrors.message}
+              disabled={submitting}
             />
+            {fieldErrors.message && (
+              <span className="compose-inline-error">{fieldErrors.message}</span>
+            )}
           </div>
 
           {/* Schedule section */}
@@ -222,25 +310,50 @@ export default function ComposePage() {
                 <label htmlFor="compose-date">Schedule date</label>
                 <input
                   id="compose-date"
-                  className="compose-schedule-input"
+                  className={`compose-schedule-input${fieldErrors.date ? ' invalid' : ''}`}
                   type="date"
                   value={date}
-                  onChange={e => setDate(e.target.value)}
+                  onChange={e => {
+                    setDate(e.target.value);
+                    if (fieldErrors.date || fieldErrors.schedule) {
+                      setFieldErrors(prev => ({ ...prev, date: undefined, schedule: undefined }));
+                    }
+                  }}
                   aria-label="Schedule date"
+                  aria-invalid={!!fieldErrors.date}
+                  disabled={submitting}
                 />
+                {fieldErrors.date && (
+                  <span className="compose-schedule-error">{fieldErrors.date}</span>
+                )}
               </div>
               <div className="compose-schedule-field">
                 <label htmlFor="compose-time">Schedule time</label>
                 <input
                   id="compose-time"
-                  className="compose-schedule-input"
+                  className={`compose-schedule-input${fieldErrors.time ? ' invalid' : ''}`}
                   type="time"
                   value={time}
-                  onChange={e => setTime(e.target.value)}
+                  onChange={e => {
+                    setTime(e.target.value);
+                    if (fieldErrors.time || fieldErrors.schedule) {
+                      setFieldErrors(prev => ({ ...prev, time: undefined, schedule: undefined }));
+                    }
+                  }}
                   aria-label="Schedule time"
+                  aria-invalid={!!fieldErrors.time}
+                  disabled={submitting}
                 />
+                {fieldErrors.time && (
+                  <span className="compose-schedule-error">{fieldErrors.time}</span>
+                )}
               </div>
             </div>
+            {fieldErrors.schedule && (
+              <div className="compose-schedule-error-banner" role="alert">
+                {fieldErrors.schedule}
+              </div>
+            )}
           </div>
 
           {/* Actions */}
