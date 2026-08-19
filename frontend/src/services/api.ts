@@ -22,13 +22,23 @@ import type { SenderItem, GetSendersResponse } from '../types/sender';
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000';
 
+/**
+ * Handle 401 Unauthorized responses by redirecting to /login if the user
+ * is currently on a protected dashboard page.
+ */
+function handleAuthFailure(statusCode: number): void {
+  if (statusCode === 401 && typeof window !== 'undefined' && window.location.pathname !== '/login') {
+    window.location.href = '/login';
+  }
+}
+
 /* ── Auth ────────────────────────────────────────────────────────────────── */
 
 /**
  * GET /auth/me
  *
  * Returns the currently authenticated user's profile.
- * Rejects with ApiError(401) if the session has expired or never existed.
+ * Rejects with ApiError(401) and redirects to /login if unauthenticated.
  */
 export async function getMe(): Promise<AuthUser> {
   const res = await fetch(`${API_BASE_URL}/auth/me`, {
@@ -40,6 +50,8 @@ export async function getMe(): Promise<AuthUser> {
     const body = (await res.json()) as GetMeResponse;
     return body.data;
   }
+
+  handleAuthFailure(res.status);
 
   let errBody: ApiErrorResponse | null = null;
   try {
@@ -66,6 +78,8 @@ export async function logoutUser(): Promise<void> {
   });
 
   if (res.ok) return;
+
+  handleAuthFailure(res.status);
 
   let errBody: ApiErrorResponse | null = null;
   try {
@@ -96,6 +110,8 @@ export async function getSenders(): Promise<SenderItem[]> {
     const body = (await res.json()) as GetSendersResponse;
     return body.data;
   }
+
+  handleAuthFailure(res.status);
 
   let errBody: ApiErrorResponse | null = null;
   try {
@@ -135,6 +151,8 @@ export async function scheduleCampaign(
     return res.json() as Promise<ScheduleCampaignResponse>;
   }
 
+  handleAuthFailure(res.status);
+
   // Parse the error body for a user-facing message
   let errBody: ApiErrorResponse | null = null;
   try {
@@ -167,6 +185,8 @@ export async function getScheduledEmails(): Promise<ScheduledEmailItem[]> {
     return body.data;
   }
 
+  handleAuthFailure(res.status);
+
   let errBody: ApiErrorResponse | null = null;
   try {
     errBody = (await res.json()) as ApiErrorResponse;
@@ -194,6 +214,8 @@ export async function getSentEmails(): Promise<SentEmailItem[]> {
     const body = (await res.json()) as GetSentEmailsResponse;
     return body.data;
   }
+
+  handleAuthFailure(res.status);
 
   let errBody: ApiErrorResponse | null = null;
   try {
