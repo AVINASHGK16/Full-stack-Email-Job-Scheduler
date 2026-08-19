@@ -288,6 +288,17 @@
   box-sizing: border-box;
 }
 
+.compose-add-sender-link {
+  color: #15803d;
+  font-weight: 500;
+  text-decoration: underline;
+  margin-left: 4px;
+}
+
+.compose-add-sender-link:hover {
+  color: #166534;
+}
+
 .compose-field-control {
   flex: 1;
   display: flex;

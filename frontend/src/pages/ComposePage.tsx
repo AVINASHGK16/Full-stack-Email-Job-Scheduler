@@ -424,7 +424,12 @@ export default function ComposePage() {
               {loadingSenders ? (
                 <div className="compose-field-loading">Loading senders...</div>
               ) : senders.length === 0 ? (
-                <div className="compose-field-warning">No configured senders found.</div>
+                <div className="compose-field-warning">
+                  No configured senders found.{' '}
+                  <Link to="/senders" className="compose-add-sender-link">
+                    Add a sender account →
+                  </Link>
+                </div>
               ) : (
                 <select
                   id="compose-sender"
