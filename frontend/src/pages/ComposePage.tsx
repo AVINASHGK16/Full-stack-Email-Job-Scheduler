@@ -132,8 +132,8 @@ export default function ComposePage() {
   const [selectedSenderId, setSelectedSenderId] = useState<string>('');
 
   /* ── Form state ── */
-  const [to, setTo]           = useState('john@example.com');
-  const [subject, setSubject] = useState('Meeting Follow-up');
+  const [to, setTo]           = useState('');
+  const [subject, setSubject] = useState('');
   const [message, setMessage] = useState(
     'Hi John,\n\nJust following up regarding our meeting earlier this week. I wanted to make sure we\'re aligned on the next steps before the end of the month.\n\nLooking forward to hearing from you.\n\nBest regards,\nOliver'
   );
