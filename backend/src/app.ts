@@ -22,21 +22,21 @@ app.use(express.json());
 // Cast required: express-session's RequestHandler type signature differs
 // slightly from Express's own overloads. This is a well-known ecosystem
 // type conflict and is safe to cast here.
+app.set('trust proxy', 1);
+
 app.use(
   session({
-    // Reuse JWT_SECRET as the session signing secret.
     secret: env.JWT_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
-      httpOnly: true,             // Prevent client-side JS from reading the cookie
-      secure: env.NODE_ENV === 'production', // HTTPS-only in production
-      sameSite: 'lax',           // Protect against CSRF while allowing OAuth redirects
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 24 * 60 * 60 * 1000,
     },
   }) as unknown as RequestHandler
 );
-
 // Passport authentication middleware.
 // initialize() sets up req.user and related helpers.
 // session() integrates with express-session to persist authentication.
